@@ -221,6 +221,10 @@ func prettyPrintInfo(dockerCli command.Cli, info types.Info) error {
 	fmt.Fprintln(dockerCli.Out(), "Live Restore Enabled:", info.LiveRestoreEnabled)
 	fmt.Fprint(dockerCli.Out(), "\n")
 
+	if command.GetManagerCount(info.Swarm) == 2 {
+		command.PrintManagerWarning(dockerCli)
+	}
+
 	// Only output these warnings if the server does not support these features
 	if info.OSType != "windows" {
 		printStorageDriverWarnings(dockerCli, info)

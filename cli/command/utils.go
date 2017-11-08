@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/pkg/system"
 	"github.com/spf13/pflag"
 )
@@ -124,4 +125,30 @@ func AddPlatformFlag(flags *pflag.FlagSet, target *string) {
 	flags.StringVar(target, "platform", os.Getenv("DOCKER_DEFAULT_PLATFORM"), "Set platform if server is multi-platform capable")
 	flags.SetAnnotation("platform", "version", []string{"1.32"})
 	flags.SetAnnotation("platform", "experimental", nil)
+}
+
+// GetManagerCount returns the number of active managers in the given Info struct
+func GetManagerCount(info swarm.Info) int {
+	if info.Cluster == nil || info.Error != "" {
+		return 0
+	}
+
+	switch info.LocalNodeState {
+	case swarm.LocalNodeStateInactive, swarm.LocalNodeStateLocked, swarm.LocalNodeStateError:
+		return 0
+	}
+
+	return info.Managers
+}
+
+// PrintManagerWarning prints a warning that the Swarm is running in a two-manager
+// configuration.
+func PrintManagerWarning(dockerCli Cli) {
+	msg := "\n"
+	msg += "WARNING: Running Swarm in a two-manager configuration. This configuration provides \n"
+	msg += "         no fault tolerance, and poses a high risk to loose control over the cluster.\n"
+	msg += "         Refer to https://docs.docker.com/engine/swarm/admin_guide/ to configure the\n"
+	msg += "         Swarm for fault-tolerance."
+
+	fmt.Fprintln(dockerCli.Err(), msg)
 }

@@ -1,6 +1,7 @@
 package node
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/docker/cli/cli"
@@ -32,5 +33,19 @@ func runDemote(dockerCli command.Cli, nodes []string) error {
 	success := func(nodeID string) {
 		fmt.Fprintf(dockerCli.Out(), "Manager %s demoted in the swarm.\n", nodeID)
 	}
-	return updateNodes(dockerCli, nodes, demote, success)
+	if err := updateNodes(dockerCli, nodes, demote, success); err != nil {
+		return err
+	}
+
+	client := dockerCli.Client()
+	ctx := context.Background()
+	info, err := client.Info(ctx)
+	if err != nil {
+		return err
+	}
+
+	if command.GetManagerCount(info.Swarm) == 2 {
+		command.PrintManagerWarning(dockerCli)
+	}
+	return nil
 }

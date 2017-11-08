@@ -84,5 +84,8 @@ func runJoin(dockerCli command.Cli, flags *pflag.FlagSet, opts joinOptions) erro
 	} else {
 		fmt.Fprintln(dockerCli.Out(), "This node joined a swarm as a worker.")
 	}
+	if command.GetManagerCount(info.Swarm) == 2 {
+		command.PrintManagerWarning(dockerCli)
+	}
 	return nil
 }
