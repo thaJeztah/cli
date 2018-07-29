@@ -26,6 +26,7 @@ Options:
       --availability string             Availability of the node ("active"|"pause"|"drain") (default "active")
       --cert-expiry duration            Validity period for node certificates (ns|us|ms|s|m|h) (default 2160h0m0s)
       --data-path-addr string           Address or interface to use for data path traffic (format: <ip|interface>)
+      --default-addr-pool string	List of default subnet addresses followed by subnet size (format: <cidr[,cidr]*:subnet-size>)
       --dispatcher-heartbeat duration   Dispatcher heartbeat period (ns|us|ms|s|m|h) (default 5s)
       --external-ca external-ca         Specifications of one or more certificate signing endpoints
       --force-new-cluster               Force create a new cluster from current state
@@ -127,6 +128,12 @@ Using this parameter it is then possible to separate the container's data traffi
 management traffic of the cluster.
 If unspecified, Docker will use the same IP address or interface that is used for the
 advertise address.
+
+### `--default-addr-pool`
+This flag specifies default subnet pools for global scope networks. If subnet size is not
+specified then default value 24 will be used.
+If unspecified, Docker will use the predefined subnets as it works on older releases.
+Format example is `default-addr-pool 30.30.0.0/16,40.40.0.0/16:24`
 
 ### `--task-history-limit`
 

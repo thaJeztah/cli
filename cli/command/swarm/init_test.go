@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/pkg/errors"
 	"gotest.tools/assert"
+	is "gotest.tools/assert/cmp"
 	"gotest.tools/golden"
 )
 
@@ -122,4 +123,29 @@ func TestSwarmInit(t *testing.T) {
 		assert.NilError(t, cmd.Execute())
 		golden.Assert(t, cli.OutBuffer().String(), fmt.Sprintf("init-%s.golden", tc.name))
 	}
+}
+
+func TestGetDefaultAddrPool(t *testing.T) {
+	// Test only CIDR input and make sure default subnet size is returned
+	addrList, size, err := getDefaultAddrPool("20.20.0.0/16,30.30.0.0/16")
+	assert.NilError(t, err)
+	assert.Check(t, is.Equal(size, 24))
+	assert.Check(t, is.Equal(len(addrList), 2))
+
+	//Pass wrong syntax params
+	_, _, err = getDefaultAddrPool("20.20.0.0/16;30.30.0.0/16;24")
+	assert.Check(t, err != nil)
+
+	// Pass subnet size smaller than subnet
+	_, _, err = getDefaultAddrPool("20.20.0.0/24,30.30.0.0/24:20")
+	assert.Check(t, err != nil)
+
+	// Pass CIDR and subnet with white space and make sure everything works
+	addrList, _, err = getDefaultAddrPool(" 20.20.0.0/20 , 30.30.0.0/20 , 40.40.0.0/16 : 24")
+	assert.NilError(t, err)
+	assert.Check(t, is.Equal(len(addrList), 3))
+
+	// Pass CIDR just with IP address and it should fail
+	_, _, err = getDefaultAddrPool(" 20.20.0.0, 30.30.0.0/20 : 24")
+	assert.Check(t, err != nil)
 }

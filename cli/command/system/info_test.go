@@ -187,6 +187,8 @@ PQQDAgNIADBFAiEAo9fTQNM5DP9bHVcTJYfl2Cay1bFu1E+lnpmN+EYJfeACIGKH
 				"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEPLs15vJQnJSNYkMFR2dmhXoYHEQYo7hNk80PCfEPElxR0tVoHtYZrj8MutZR+xWCHUkaKTZVOIu5MwDW0uU08w=="),
 		},
 		RootRotationInProgress: false,
+		DefaultAddrPool:        []string{"10.0.0.0/8"},
+		SubnetSize:             24,
 	},
 }
 

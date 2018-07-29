@@ -21,6 +21,8 @@ Swarm: active
  ClusterID: 9vs5ygs0gguyyec4iqf2314c0
  Managers: 1
  Nodes: 1
+ Default Address Pool: 10.0.0.0/8  
+ SubnetSize: 24
  Orchestration:
   Task History Retention Limit: 5
  Raft:
