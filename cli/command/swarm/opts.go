@@ -23,6 +23,7 @@ const (
 	flagAdvertiseAddr       = "advertise-addr"
 	flagDataPathAddr        = "data-path-addr"
 	flagDefaultAddrPool     = "default-addr-pool"
+	flagDefaultAddrPoolSize = "default-addr-pool-size"
 	flagQuiet               = "quiet"
 	flagRotate              = "rotate"
 	flagToken               = "token"
