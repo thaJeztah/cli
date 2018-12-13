@@ -9,6 +9,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/image"
+	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -59,13 +60,23 @@ func NewCreateCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runCreate(dockerCli command.Cli, flags *pflag.FlagSet, opts *createOptions, copts *containerOptions) error {
+func runCreate(dockerCli command.Cli, flags *pflag.FlagSet, options *createOptions, copts *containerOptions) error {
+	proxyConfig := dockerCli.ConfigFile().ParseProxyConfig(dockerCli.Client().DaemonHost(), copts.env.GetAll())
+	newEnv := []string{}
+	for k, v := range proxyConfig {
+		if v == nil {
+			newEnv = append(newEnv, k)
+		} else {
+			newEnv = append(newEnv, fmt.Sprintf("%s=%s", k, *v))
+		}
+	}
+	copts.env = *opts.NewListOptsRef(&newEnv, nil)
 	containerConfig, err := parse(flags, copts)
 	if err != nil {
 		reportError(dockerCli.Err(), "create", err.Error(), true)
 		return cli.StatusError{StatusCode: 125}
 	}
-	response, err := createContainer(context.Background(), dockerCli, containerConfig, opts)
+	response, err := createContainer(context.Background(), dockerCli, containerConfig, options)
 	if err != nil {
 		return err
 	}
