@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"path"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -868,4 +869,28 @@ func validateAttach(val string) (string, error) {
 		}
 	}
 	return val, errors.Errorf("valid streams are STDIN, STDOUT and STDERR")
+}
+
+// applyProxyConfig sets proxy environment variables for the container. If a proxy
+// environment variable is already set, the existing environment variable is used.
+func applyProxyConfig(env opts.ListOpts, proxies map[string]*string) error {
+	keys := make([]string, 0, len(proxies))
+	for k := range proxies {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	m := opts.ConvertKVStringsToMapWithNil(env.GetAll())
+	for _, k := range keys {
+		if *proxies[k] == "" {
+			continue
+		}
+		if _, ok := m[k]; ok {
+			continue
+		}
+		if err := env.Set(k + "=" + *proxies[k]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

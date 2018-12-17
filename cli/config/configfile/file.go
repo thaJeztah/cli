@@ -195,34 +195,41 @@ func (configFile *ConfigFile) Save() error {
 // ParseProxyConfig computes proxy configuration by retrieving the config for the provided host and
 // then checking this against any environment variables provided to the container
 func (configFile *ConfigFile) ParseProxyConfig(host string, runOpts []string) map[string]*string {
-	var cfgKey string
-
-	if _, ok := configFile.Proxies[host]; !ok {
-		cfgKey = "default"
-	} else {
-		cfgKey = host
-	}
-
-	config := configFile.Proxies[cfgKey]
-	permitted := map[string]*string{
-		"HTTP_PROXY":  &config.HTTPProxy,
-		"HTTPS_PROXY": &config.HTTPSProxy,
-		"NO_PROXY":    &config.NoProxy,
-		"FTP_PROXY":   &config.FTPProxy,
-	}
 	m := opts.ConvertKVStringsToMapWithNil(runOpts)
-	for k := range permitted {
-		if *permitted[k] == "" {
+	for k, v := range configFile.GetProxyConfig(host) {
+		if *v == "" {
 			continue
 		}
 		if _, ok := m[k]; !ok {
-			m[k] = permitted[k]
+			m[k] = v
 		}
 		if _, ok := m[strings.ToLower(k)]; !ok {
-			m[strings.ToLower(k)] = permitted[k]
+			m[strings.ToLower(k)] = v
 		}
 	}
 	return m
+}
+
+// GetProxyConfig returns the proxy configuration for the provided host, or the
+// default proxy configuration if no configuration was found for the provided host.
+func (configFile *ConfigFile) GetProxyConfig(host string) map[string]*string {
+	var config ProxyConfig
+	if _, ok := configFile.Proxies[host]; !ok {
+		config = configFile.Proxies["default"]
+	} else {
+		config = configFile.Proxies[host]
+	}
+
+	return map[string]*string{
+		"HTTP_PROXY":  &config.HTTPProxy,
+		"http_proxy":  &config.HTTPProxy,
+		"HTTPS_PROXY": &config.HTTPSProxy,
+		"https_proxy": &config.HTTPSProxy,
+		"NO_PROXY":    &config.NoProxy,
+		"no_proxy":    &config.NoProxy,
+		"FTP_PROXY":   &config.FTPProxy,
+		"ftp_proxy":   &config.FTPProxy,
+	}
 }
 
 // encodeAuth creates a base64 encoded string to containing authorization information

@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 
 	"github.com/docker/cli/cli"
@@ -384,7 +385,11 @@ func runBuild(dockerCli command.Cli, options buildOptions) error {
 
 	configFile := dockerCli.ConfigFile()
 	authConfigs, _ := configFile.GetAllCredentials()
-	buildOptions := imageBuildOptions(dockerCli, options)
+	proxyConfg := configFile.GetProxyConfig(dockerCli.Client().DaemonHost())
+	if err := applyProxyConfig(options.buildArgs, proxyConfg); err != nil {
+		return err
+	}
+	buildOptions := imageBuildOptions(options)
 	buildOptions.Version = types.BuilderV1
 	buildOptions.Dockerfile = relDockerfile
 	buildOptions.AuthConfigs = authConfigs
@@ -599,8 +604,7 @@ func replaceDockerfileForContentTrust(ctx context.Context, inputTarStream io.Rea
 	return pipeReader
 }
 
-func imageBuildOptions(dockerCli command.Cli, options buildOptions) types.ImageBuildOptions {
-	configFile := dockerCli.ConfigFile()
+func imageBuildOptions(options buildOptions) types.ImageBuildOptions {
 	return types.ImageBuildOptions{
 		Memory:         options.memory.Value(),
 		MemorySwap:     options.memorySwap.Value(),
@@ -619,7 +623,7 @@ func imageBuildOptions(dockerCli command.Cli, options buildOptions) types.ImageB
 		CgroupParent:   options.cgroupParent,
 		ShmSize:        options.shmSize.Value(),
 		Ulimits:        options.ulimits.GetList(),
-		BuildArgs:      configFile.ParseProxyConfig(dockerCli.Client().DaemonHost(), options.buildArgs.GetAll()),
+		BuildArgs:      opts.ConvertKVStringsToMapWithNil(options.buildArgs.GetAll()),
 		Labels:         opts.ConvertKVStringsToMap(options.labels.GetAll()),
 		CacheFrom:      options.cacheFrom,
 		SecurityOpt:    options.securityOpt,
@@ -629,4 +633,28 @@ func imageBuildOptions(dockerCli command.Cli, options buildOptions) types.ImageB
 		Target:         options.target,
 		Platform:       options.platform,
 	}
+}
+
+// applyProxyConfig sets proxy environment variables for the container. If a proxy
+// environment variable is already set, the existing environment variable is used.
+func applyProxyConfig(env opts.ListOpts, proxies map[string]*string) error {
+	keys := make([]string, 0, len(proxies))
+	for k := range proxies {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	m := opts.ConvertKVStringsToMapWithNil(env.GetAll())
+	for _, k := range keys {
+		if *proxies[k] == "" {
+			continue
+		}
+		if _, ok := m[k]; ok {
+			continue
+		}
+		if err := env.Set(k + "=" + *proxies[k]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

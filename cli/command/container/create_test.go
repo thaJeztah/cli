@@ -187,7 +187,6 @@ func TestCreateContainerWithProxyConfig(t *testing.T) {
 			networkingConfig *network.NetworkingConfig,
 			containerName string,
 		) (container.ContainerCreateCreatedBody, error) {
-			sort.Strings(config.Env)
 			assert.DeepEqual(t, config.Env, expected)
 			return container.ContainerCreateCreatedBody{}, nil
 		},
