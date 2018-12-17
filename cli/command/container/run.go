@@ -98,15 +98,7 @@ func isLocalhost(ip string) bool {
 }
 
 func runRun(dockerCli command.Cli, flags *pflag.FlagSet, ropts *runOptions, copts *containerOptions) error {
-	proxyConfig := dockerCli.ConfigFile().ParseProxyConfig(dockerCli.Client().DaemonHost(), copts.env.GetAll())
-	newEnv := []string{}
-	for k, v := range proxyConfig {
-		if v == nil {
-			newEnv = append(newEnv, k)
-		} else {
-			newEnv = append(newEnv, fmt.Sprintf("%s=%s", k, *v))
-		}
-	}
+	newEnv := dockerCli.ConfigFile().ParseProxyConfig(dockerCli.Client().DaemonHost(), copts.env.GetAll())
 	copts.env = *opts.NewListOptsRef(&newEnv, nil)
 	containerConfig, err := parse(flags, copts)
 	// just in case the parse does not exit

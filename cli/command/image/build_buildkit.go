@@ -175,7 +175,7 @@ func runBuildBuildKit(dockerCli command.Cli, options buildOptions) error {
 			s.Close()
 		}()
 
-		buildOptions := imageBuildOptions(dockerCli, options)
+		buildOptions := imageBuildOptions(options)
 		buildOptions.Version = types.BuilderBuildKit
 		buildOptions.Dockerfile = dockerfileName
 		//buildOptions.AuthConfigs = authConfigs   // handled by session

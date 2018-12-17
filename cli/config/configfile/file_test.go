@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"sort"
 	"testing"
 
 	"github.com/docker/cli/cli/config/credentials"
@@ -28,30 +29,31 @@ func TestProxyConfig(t *testing.T) {
 	httpsProxy := "https://user:password@proxy.mycorp.com:3129"
 	ftpProxy := "http://ftpproxy.mycorp.com:21"
 	noProxy := "*.intra.mycorp.com"
-	defaultProxyConfig := ProxyConfig{
-		HTTPProxy:  httpProxy,
-		HTTPSProxy: httpsProxy,
-		FTPProxy:   ftpProxy,
-		NoProxy:    noProxy,
-	}
 
 	cfg := ConfigFile{
 		Proxies: map[string]ProxyConfig{
-			"default": defaultProxyConfig,
+			"default": {
+				HTTPProxy:  httpProxy,
+				HTTPSProxy: httpsProxy,
+				FTPProxy:   ftpProxy,
+				NoProxy:    noProxy,
+			},
 		},
 	}
 
 	proxyConfig := cfg.ParseProxyConfig("/var/run/docker.sock", []string{})
-	expected := map[string]*string{
-		"HTTP_PROXY":  &httpProxy,
-		"http_proxy":  &httpProxy,
-		"HTTPS_PROXY": &httpsProxy,
-		"https_proxy": &httpsProxy,
-		"FTP_PROXY":   &ftpProxy,
-		"ftp_proxy":   &ftpProxy,
-		"NO_PROXY":    &noProxy,
-		"no_proxy":    &noProxy,
+	expected := []string{
+		"HTTP_PROXY=" + httpProxy,
+		"http_proxy=" + httpProxy,
+		"HTTPS_PROXY=" + httpsProxy,
+		"https_proxy=" + httpsProxy,
+		"FTP_PROXY=" + ftpProxy,
+		"ftp_proxy=" + ftpProxy,
+		"NO_PROXY=" + noProxy,
+		"no_proxy=" + noProxy,
 	}
+	sort.Strings(proxyConfig)
+	sort.Strings(expected)
 	assert.Check(t, is.DeepEqual(expected, proxyConfig))
 }
 
@@ -62,16 +64,15 @@ func TestProxyConfigOverride(t *testing.T) {
 	httpsProxy := "https://user:password@proxy.mycorp.com:3129"
 	ftpProxy := "http://ftpproxy.mycorp.com:21"
 	noProxy := "*.intra.mycorp.com"
-	defaultProxyConfig := ProxyConfig{
-		HTTPProxy:  httpProxy,
-		HTTPSProxy: httpsProxy,
-		FTPProxy:   ftpProxy,
-		NoProxy:    noProxy,
-	}
 
 	cfg := ConfigFile{
 		Proxies: map[string]ProxyConfig{
-			"default": defaultProxyConfig,
+			"default": {
+				HTTPProxy:  httpProxy,
+				HTTPSProxy: httpsProxy,
+				FTPProxy:   ftpProxy,
+				NoProxy:    noProxy,
+			},
 		},
 	}
 
@@ -104,23 +105,20 @@ func TestProxyConfigPerHost(t *testing.T) {
 	extFTPProxy := "http://ftpproxy.example.com:21"
 	extNoProxy := "*.intra.example.com"
 
-	defaultProxyConfig := ProxyConfig{
-		HTTPProxy:  httpProxy,
-		HTTPSProxy: httpsProxy,
-		FTPProxy:   ftpProxy,
-		NoProxy:    noProxy,
-	}
-	externalProxyConfig := ProxyConfig{
-		HTTPProxy:  extHTTPProxy,
-		HTTPSProxy: extHTTPSProxy,
-		FTPProxy:   extFTPProxy,
-		NoProxy:    extNoProxy,
-	}
-
 	cfg := ConfigFile{
 		Proxies: map[string]ProxyConfig{
-			"default":                       defaultProxyConfig,
-			"tcp://example.docker.com:2376": externalProxyConfig,
+			"default": {
+				HTTPProxy:  httpProxy,
+				HTTPSProxy: httpsProxy,
+				FTPProxy:   ftpProxy,
+				NoProxy:    noProxy,
+			},
+			"tcp://example.docker.com:2376": {
+				HTTPProxy:  extHTTPProxy,
+				HTTPSProxy: extHTTPSProxy,
+				FTPProxy:   extFTPProxy,
+				NoProxy:    extNoProxy,
+			},
 		},
 	}
 

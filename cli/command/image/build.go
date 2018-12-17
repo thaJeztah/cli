@@ -384,7 +384,10 @@ func runBuild(dockerCli command.Cli, options buildOptions) error {
 
 	configFile := dockerCli.ConfigFile()
 	authConfigs, _ := configFile.GetAllCredentials()
-	buildOptions := imageBuildOptions(dockerCli, options)
+	newEnv := configFile.ParseProxyConfig(dockerCli.Client().DaemonHost(), options.buildArgs.GetAll())
+	options.buildArgs = *opts.NewListOptsRef(&newEnv, nil)
+
+	buildOptions := imageBuildOptions(options)
 	buildOptions.Version = types.BuilderV1
 	buildOptions.Dockerfile = relDockerfile
 	buildOptions.AuthConfigs = authConfigs
@@ -599,8 +602,7 @@ func replaceDockerfileForContentTrust(ctx context.Context, inputTarStream io.Rea
 	return pipeReader
 }
 
-func imageBuildOptions(dockerCli command.Cli, options buildOptions) types.ImageBuildOptions {
-	configFile := dockerCli.ConfigFile()
+func imageBuildOptions(options buildOptions) types.ImageBuildOptions {
 	return types.ImageBuildOptions{
 		Memory:         options.memory.Value(),
 		MemorySwap:     options.memorySwap.Value(),
@@ -619,7 +621,7 @@ func imageBuildOptions(dockerCli command.Cli, options buildOptions) types.ImageB
 		CgroupParent:   options.cgroupParent,
 		ShmSize:        options.shmSize.Value(),
 		Ulimits:        options.ulimits.GetList(),
-		BuildArgs:      configFile.ParseProxyConfig(dockerCli.Client().DaemonHost(), options.buildArgs.GetAll()),
+		BuildArgs:      opts.ConvertKVStringsToMapWithNil(options.buildArgs.GetAll()),
 		Labels:         opts.ConvertKVStringsToMap(options.labels.GetAll()),
 		CacheFrom:      options.cacheFrom,
 		SecurityOpt:    options.securityOpt,
