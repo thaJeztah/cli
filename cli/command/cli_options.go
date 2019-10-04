@@ -137,6 +137,28 @@ func WithAPIClientFromEndpoint() InitializeOpt {
 	}
 }
 
+// WithDockerContext resolves, and loads the current context for the CLI
+func WithDockerContext() InitializeOpt {
+	return func(cli *DockerCli) error {
+		baseContextStore := store.New(cliconfig.ContextStoreDir(), cli.contextStoreConfig)
+		cli.contextStore = &ContextStoreWithDefault{
+			Store: baseContextStore,
+			Resolver: func() (*DefaultContext, error) {
+				return ResolveDefaultContext(cli.opts.Common, cli.ConfigFile(), cli.contextStoreConfig, cli.Err())
+			},
+		}
+		var err error
+		cli.currentContext, err = resolveContextName(cli.opts.Common, cli.configFile, cli.contextStore)
+		if err != nil {
+			return err
+		}
+		cli.dockerEndpoint, err = resolveDockerEndpoint(cli.contextStore, cli.currentContext)
+		if err != nil {
+			return errors.Wrap(err, "unable to resolve docker endpoint")
+		}
+	}
+}
+
 // WithDefaultConfigFile loads the default configuration, and sets the credential
 // store, if no store has been set yet.
 func WithDefaultConfigFile() InitializeOpt {

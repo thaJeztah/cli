@@ -78,6 +78,7 @@ type DockerCli struct {
 	currentContext     string
 	dockerEndpoint     docker.Endpoint
 	contextStoreConfig store.Config
+	opts               *cliflags.ClientOptions
 }
 
 // DefaultVersion returns api.defaultVersion or DOCKER_API_VERSION if specified.
@@ -205,7 +206,7 @@ func (cli *DockerCli) RegistryClient(allowInsecure bool) registryclient.Registry
 // Initialize the dockerCli runs initialization that must happen after command
 // line flags are parsed.
 func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...InitializeOpt) error {
-	var err error
+	cli.opts = opts
 
 	for _, o := range ops {
 		if err := o(cli); err != nil {
@@ -225,23 +226,9 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 	if err := WithDefaultConfigFile()(cli); err != nil {
 		return err
 	}
-
-	baseContextStore := store.New(config.ContextStoreDir(), cli.contextStoreConfig)
-	cli.contextStore = &ContextStoreWithDefault{
-		Store: baseContextStore,
-		Resolver: func() (*DefaultContext, error) {
-			return ResolveDefaultContext(opts.Common, cli.ConfigFile(), cli.contextStoreConfig, cli.Err())
-		},
-	}
-	cli.currentContext, err = resolveContextName(opts.Common, cli.configFile, cli.contextStore)
-	if err != nil {
+	if err := WithDockerContext()(cli); err != nil {
 		return err
 	}
-	cli.dockerEndpoint, err = resolveDockerEndpoint(cli.contextStore, cli.currentContext)
-	if err != nil {
-		return errors.Wrap(err, "unable to resolve docker endpoint")
-	}
-
 	if err := WithAPIClientFromEndpoint()(cli); err != nil {
 		return err
 	}
