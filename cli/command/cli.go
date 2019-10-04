@@ -178,8 +178,6 @@ func (cli *DockerCli) RegistryClient(allowInsecure bool) registryclient.Registry
 // Initialize the dockerCli runs initialization that must happen after command
 // line flags are parsed.
 func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...InitializeOpt) error {
-	var err error
-
 	cli.opts = opts
 
 	for _, o := range ops {
@@ -206,18 +204,8 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 	if err := WithAPIClientFromEndpoint()(cli); err != nil {
 		return err
 	}
-	var experimentalValue string
-	// Environment variable always overrides configuration
-	if experimentalValue = os.Getenv("DOCKER_CLI_EXPERIMENTAL"); experimentalValue == "" {
-		experimentalValue = cli.configFile.Experimental
-	}
-	hasExperimental, err := isEnabled(experimentalValue)
-	if err != nil {
-		return errors.Wrap(err, "Experimental field")
-	}
-	cli.clientInfo = ClientInfo{
-		DefaultVersion:  cli.client.ClientVersion(),
-		HasExperimental: hasExperimental,
+	if err := WithClientInfo()(cli); err != nil {
+		return err
 	}
 	cli.initializeFromClient()
 	return nil
