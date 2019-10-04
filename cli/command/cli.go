@@ -194,7 +194,9 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 		debug.Enable()
 	}
 
-	cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
+	if err := WithDefaultConfigFile()(cli); err != nil {
+		return err
+	}
 
 	baseContextStore := store.New(cliconfig.ContextStoreDir(), cli.contextStoreConfig)
 	cli.contextStore = &ContextStoreWithDefault{

@@ -6,6 +6,7 @@ import (
 	"os"
 	"strconv"
 
+	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/cli/cli/streams"
@@ -145,5 +146,15 @@ func WithAPIClientFromEndpoint() InitializeOpt {
 			cli.client, err = getClientWithPassword(passRetriever, newClient)
 		}
 		return err
+	}
+}
+
+// WithDefaultConfigFile loads the default configuration, and sets the credential
+// store, if no store has been set yet.
+func WithDefaultConfigFile() InitializeOpt {
+	return func(cli *DockerCli) error {
+		// TODO LoadDefaultConfigFile should return an error instead of writing it as warning
+		cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
+		return nil
 	}
 }
