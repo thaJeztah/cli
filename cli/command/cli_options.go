@@ -10,11 +10,16 @@ import (
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/cli/cli/streams"
 	clitypes "github.com/docker/cli/types"
+	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/term"
 )
 
 // DockerCliOption applies a modification on a DockerCli.
 type DockerCliOption func(cli *DockerCli) error
+
+// InitializeOpt is the type of the functional options passed to DockerCli.Initialize
+// TODO combine InitializeOpt and DockerCliOption, as they have the same signature
+type InitializeOpt func(dockerCli *DockerCli) error
 
 // WithStandardStreams sets a cli in, out and err streams with the standard streams.
 func WithStandardStreams() DockerCliOption {
@@ -101,5 +106,14 @@ func WithContextEndpointType(endpointName string, endpointType store.TypeGetter)
 		}
 		cli.contextStoreConfig.SetEndpoint(endpointName, endpointType)
 		return nil
+	}
+}
+
+// WithInitializeClient is passed to DockerCli.Initialize by callers who wish to set a particular API Client for use by the CLI.
+func WithInitializeClient(makeClient func(dockerCli *DockerCli) (client.APIClient, error)) InitializeOpt {
+	return func(dockerCli *DockerCli) error {
+		var err error
+		dockerCli.client, err = makeClient(dockerCli)
+		return err
 	}
 }
