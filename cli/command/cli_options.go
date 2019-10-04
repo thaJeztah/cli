@@ -9,11 +9,16 @@ import (
 	"github.com/docker/cli/cli/context/docker"
 	"github.com/docker/cli/cli/context/store"
 	"github.com/docker/cli/cli/streams"
+	"github.com/docker/docker/client"
 	"github.com/moby/term"
 )
 
 // DockerCliOption applies a modification on a DockerCli.
 type DockerCliOption func(cli *DockerCli) error
+
+// InitializeOpt is the type of the functional options passed to DockerCli.Initialize
+// TODO combine InitializeOpt and DockerCliOption, as they have the same signature
+type InitializeOpt func(dockerCli *DockerCli) error
 
 // WithStandardStreams sets a cli in, out and err streams with the standard streams.
 func WithStandardStreams() DockerCliOption {
@@ -100,5 +105,14 @@ func WithDefaultContextStoreConfig() DockerCliOption {
 	return func(cli *DockerCli) error {
 		cli.contextStoreConfig = DefaultContextStoreConfig()
 		return nil
+	}
+}
+
+// WithInitializeClient is passed to DockerCli.Initialize by callers who wish to set a particular API Client for use by the CLI.
+func WithInitializeClient(makeClient func(dockerCli *DockerCli) (client.APIClient, error)) InitializeOpt {
+	return func(dockerCli *DockerCli) error {
+		var err error
+		dockerCli.client, err = makeClient(dockerCli)
+		return err
 	}
 }

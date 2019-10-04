@@ -202,18 +202,6 @@ func (cli *DockerCli) RegistryClient(allowInsecure bool) registryclient.Registry
 	return registryclient.NewRegistryClient(resolver, UserAgent(), allowInsecure)
 }
 
-// InitializeOpt is the type of the functional options passed to DockerCli.Initialize
-type InitializeOpt func(dockerCli *DockerCli) error
-
-// WithInitializeClient is passed to DockerCli.Initialize by callers who wish to set a particular API Client for use by the CLI.
-func WithInitializeClient(makeClient func(dockerCli *DockerCli) (client.APIClient, error)) InitializeOpt {
-	return func(dockerCli *DockerCli) error {
-		var err error
-		dockerCli.client, err = makeClient(dockerCli)
-		return err
-	}
-}
-
 // Initialize the dockerCli runs initialization that must happen after command
 // line flags are parsed.
 func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...InitializeOpt) error {
