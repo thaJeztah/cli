@@ -240,11 +240,8 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 		return errors.Wrap(err, "unable to resolve docker endpoint")
 	}
 
-	if cli.client == nil {
-		cli.client, err = newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile)
-		if err != nil {
-			return err
-		}
+	if err := WithAPIClientFromEndpoint()(cli); err != nil {
+		return err
 	}
 	cli.initializeFromClient()
 

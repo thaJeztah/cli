@@ -1,7 +1,6 @@
 package command
 
 import (
-	"fmt"
 	"io"
 	"os"
 	"strconv"
@@ -11,6 +10,7 @@ import (
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/docker/client"
 	"github.com/moby/term"
+	"github.com/pkg/errors"
 )
 
 // DockerCliOption applies a modification on a DockerCli.
@@ -93,7 +93,7 @@ func WithContextEndpointType(endpointName string, endpointType store.TypeGetter)
 	return func(cli *DockerCli) error {
 		switch endpointName {
 		case docker.DockerEndpoint:
-			return fmt.Errorf("cannot change %q endpoint type", endpointName)
+			return errors.Errorf("cannot change %q endpoint type", endpointName)
 		}
 		cli.contextStoreConfig.SetEndpoint(endpointName, endpointType)
 		return nil
@@ -113,6 +113,25 @@ func WithInitializeClient(makeClient func(dockerCli *DockerCli) (client.APIClien
 	return func(dockerCli *DockerCli) error {
 		var err error
 		dockerCli.client, err = makeClient(dockerCli)
+		return err
+	}
+}
+
+// WithAPIClientFromEndpoint initializes the CLI's API client if no client has
+// been set yet. The API client is based on the CLI's current configuration and
+// the active endpoint, or returns an error  if no configuration is loaded. If
+// the CLI already has an API client set, this function is a no-op.
+func WithAPIClientFromEndpoint() InitializeOpt {
+	return func(cli *DockerCli) error {
+		if cli.client != nil {
+			return nil
+		}
+		if cli.configFile == nil {
+			return errors.New("failed to initialize API client, because no config file is loaded")
+		}
+
+		var err error
+		cli.client, err = newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile)
 		return err
 	}
 }
