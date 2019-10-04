@@ -127,11 +127,14 @@ func ShowHelp(err io.Writer) func(*cobra.Command, []string) error {
 
 // ConfigFile returns the ConfigFile
 func (cli *DockerCli) ConfigFile() *configfile.ConfigFile {
-	if cli.configFile != nil {
-		return cli.configFile
+	if cli.configFile == nil {
+		cli.loadConfigFile()
 	}
-	cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
 	return cli.configFile
+}
+
+func (cli *DockerCli) loadConfigFile() {
+	cli.configFile = cliconfig.LoadDefaultConfigFile(cli.err)
 }
 
 // ServerInfo returns the server version details for the host this client is
@@ -142,28 +145,33 @@ func (cli *DockerCli) ServerInfo() ServerInfo {
 
 // ClientInfo returns the client details for the cli
 func (cli *DockerCli) ClientInfo() ClientInfo {
-	if cli.clientInfo != nil {
-		return *cli.clientInfo
+	if cli.clientInfo == nil {
+		_ = cli.loadClientInfo()
 	}
+	return *cli.clientInfo
+}
+
+func (cli *DockerCli) loadClientInfo() error {
 	var experimentalValue string
 	// Environment variable always overrides configuration
 	if experimentalValue = os.Getenv("DOCKER_CLI_EXPERIMENTAL"); experimentalValue == "" {
-		experimentalValue = cli.ConfigFile().Experimental
+		experimentalValue = cli.configFile.Experimental
 	}
-	hasExperimental, _ := isEnabled(experimentalValue)
+	hasExperimental, err := isEnabled(experimentalValue)
+	if err != nil {
+		return errors.Wrap(err, "Experimental field")
+	}
 
-	version := ""
-
+	var v string
 	if cli.client != nil {
-		version = cli.client.ClientVersion()
+		v = cli.client.ClientVersion()
 	} else {
-		version = api.DefaultVersion
+		v = api.DefaultVersion
 	}
 	cli.clientInfo = &ClientInfo{
-		DefaultVersion:  version,
+		DefaultVersion:  v,
 		HasExperimental: hasExperimental,
 	}
-	return *cli.clientInfo
 }
 
 // ContentTrustEnabled returns whether content trust has been enabled by an
@@ -233,8 +241,7 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 		debug.Enable()
 	}
 
-	// Load Client config
-	cli.ClientInfo()
+	cli.loadConfigFile()
 
 	baseContextStore := store.New(cliconfig.ContextStoreDir(), cli.contextStoreConfig)
 	cli.contextStore = &ContextStoreWithDefault{
@@ -265,6 +272,10 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 		if err != nil {
 			return err
 		}
+	}
+	err = cli.loadClientInfo()
+	if err != nil {
+		return err
 	}
 	cli.initializeFromClient()
 	return nil
