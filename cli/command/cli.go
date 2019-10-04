@@ -222,7 +222,9 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 		debug.Enable()
 	}
 
-	cli.loadConfigFile()
+	if err := WithDefaultConfigFile()(cli); err != nil {
+		return err
+	}
 
 	baseContextStore := store.New(config.ContextStoreDir(), cli.contextStoreConfig)
 	cli.contextStore = &ContextStoreWithDefault{
