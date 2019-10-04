@@ -12,6 +12,9 @@ import (
 	clitypes "github.com/docker/cli/types"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/pkg/term"
+	"github.com/docker/go-connections/tlsconfig"
+	"github.com/pkg/errors"
+	"github.com/theupdateframework/notary/passphrase"
 )
 
 // DockerCliOption applies a modification on a DockerCli.
@@ -114,6 +117,33 @@ func WithInitializeClient(makeClient func(dockerCli *DockerCli) (client.APIClien
 	return func(dockerCli *DockerCli) error {
 		var err error
 		dockerCli.client, err = makeClient(dockerCli)
+		return err
+	}
+}
+
+// WithAPIClientFromEndpoint initializes the CLI's API client if no client has
+// been set yet. The API client is based on the CLI's current configuration and
+// the active endpoint, or returns an error  if no configuration is loaded. If
+// the CLI already has an API client set, this function is a no-op.
+func WithAPIClientFromEndpoint() InitializeOpt {
+	return func(cli *DockerCli) error {
+		if cli.client != nil {
+			return nil
+		}
+		if cli.configFile == nil {
+			return errors.New("failed to initialize API client, because no config file is loaded")
+		}
+
+		var err error
+		cli.client, err = newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile)
+		if tlsconfig.IsErrEncryptedKey(err) {
+			passRetriever := passphrase.PromptRetrieverWithInOut(cli.In(), cli.Out(), nil)
+			newClient := func(password string) (client.APIClient, error) {
+				cli.dockerEndpoint.TLSPassword = password
+				return newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile)
+			}
+			cli.client, err = getClientWithPassword(passRetriever, newClient)
+		}
 		return err
 	}
 }

@@ -34,7 +34,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/theupdateframework/notary"
 	notaryclient "github.com/theupdateframework/notary/client"
-	"github.com/theupdateframework/notary/passphrase"
 )
 
 // Streams is an interface which exposes the standard input and output streams
@@ -213,19 +212,8 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 		return errors.Wrap(err, "unable to resolve docker endpoint")
 	}
 
-	if cli.client == nil {
-		cli.client, err = newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile)
-		if tlsconfig.IsErrEncryptedKey(err) {
-			passRetriever := passphrase.PromptRetrieverWithInOut(cli.In(), cli.Out(), nil)
-			newClient := func(password string) (client.APIClient, error) {
-				cli.dockerEndpoint.TLSPassword = password
-				return newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile)
-			}
-			cli.client, err = getClientWithPassword(passRetriever, newClient)
-		}
-		if err != nil {
-			return err
-		}
+	if err := WithAPIClientFromEndpoint()(cli); err != nil {
+		return err
 	}
 	var experimentalValue string
 	// Environment variable always overrides configuration
