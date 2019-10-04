@@ -232,6 +232,9 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 	if err := WithAPIClientFromEndpoint()(cli); err != nil {
 		return err
 	}
+	if err := WithClientInfo()(cli); err != nil {
+		return err
+	}
 	cli.initializeFromClient()
 
 	if err := cli.loadClientInfo(); err != nil {

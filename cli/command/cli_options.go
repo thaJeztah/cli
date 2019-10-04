@@ -168,3 +168,23 @@ func WithDefaultConfigFile() InitializeOpt {
 		return nil
 	}
 }
+
+// WithClientInfo propagates the client's DefaultVersion and HasExperimental fields
+func WithClientInfo() InitializeOpt {
+	return func(cli *DockerCli) error {
+		var experimentalValue string
+		// Environment variable always overrides configuration
+		if experimentalValue = os.Getenv("DOCKER_CLI_EXPERIMENTAL"); experimentalValue == "" {
+			experimentalValue = cli.configFile.Experimental
+		}
+		hasExperimental, err := isEnabled(experimentalValue)
+		if err != nil {
+			return errors.Wrap(err, "Experimental field")
+		}
+		cli.clientInfo = ClientInfo{
+			DefaultVersion:  cli.client.ClientVersion(),
+			HasExperimental: hasExperimental,
+		}
+		return nil
+	}
+}
