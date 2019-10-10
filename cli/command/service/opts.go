@@ -367,9 +367,33 @@ func (c *credentialSpecOpt) Value() *swarm.CredentialSpec {
 	return c.value
 }
 
+// resolveNetworkID resolves the ID of networkIDOrName. If the networked fails
+// to resolve, but is the name of a known pre-defined network, no ID is resolved,
+// and networkIDOrName is returned as-is. Only swarm-scoped networks are considered.
 func resolveNetworkID(ctx context.Context, apiClient client.NetworkAPIClient, networkIDOrName string) (string, error) {
 	nw, err := apiClient.NetworkInspect(ctx, networkIDOrName, types.NetworkInspectOptions{Scope: "swarm"})
-	return nw.ID, err
+	if err == nil {
+		// Success: network was found as a swarm-scoped network
+		return nw.ID, err
+	}
+	if client.IsErrNotFound(err) {
+		// TODO IsUserDefined is platform-specific, and thus does not detect this
+		//      situation when deploying Windows containers/services from a non-Windows
+		//      CLI, and vice-versa.
+		if container.NetworkMode(networkIDOrName).IsUserDefined() {
+			// User-defined network was not found or is not a swarm-scoped network
+			return "", err
+		}
+		// Failed to resolve the network, but networkIDOrName is (likely) a
+		// pre-defined network. Some APIs (such as the classic Swarm API) do not
+		// return pre-defined networks. Pre-defined networks always exist on all
+		// nodes as local-scoped networks, so there's no need to inspect them.
+		// We'll return `networkIDOrName` here to attach the service by name,
+		// instead of by its ID.
+		return networkIDOrName, nil
+	}
+	// Failed to resolve the network
+	return "", err
 }
 
 func convertNetworks(networks opts.NetworkOpt) []swarm.NetworkAttachmentConfig {
