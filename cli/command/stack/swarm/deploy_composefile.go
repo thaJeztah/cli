@@ -83,11 +83,13 @@ func validateExternalNetworks(
 	externalNetworks []string,
 ) error {
 	for _, networkName := range externalNetworks {
+		// TODO incorporate these checks into resolveNetworkID(), as the error messages are more useful
 		if !container.NetworkMode(networkName).IsUserDefined() {
 			// Networks that are not user defined always exist on all nodes as
 			// local-scoped networks, so there's no need to inspect them.
 			continue
 		}
+		// TODO when incorporating this; verify that listing _all_ networks (not just swarm-scoped) does not introduce a big overhead
 		network, err := client.NetworkInspect(ctx, networkName, types.NetworkInspectOptions{})
 		switch {
 		case dockerclient.IsErrNotFound(err):

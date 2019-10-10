@@ -1255,6 +1255,7 @@ func updateNetworks(ctx context.Context, apiClient client.NetworkAPIClient, flag
 	toRemove := buildToRemoveSet(flags, flagNetworkRemove)
 	idsToRemove := make(map[string]struct{})
 	for networkIDOrName := range toRemove {
+		// TODO replace this with resolveNetworkID()
 		network, err := apiClient.NetworkInspect(ctx, networkIDOrName, types.NetworkInspectOptions{Scope: "swarm"})
 		if err != nil {
 			return err
@@ -1277,6 +1278,11 @@ func updateNetworks(ctx context.Context, apiClient client.NetworkAPIClient, flag
 		values := flags.Lookup(flagNetworkAdd).Value.(*opts.NetworkOpt)
 		networks := convertNetworks(*values)
 		for _, network := range networks {
+			// TODO TODO first check if there's a conflict by NAME (need to update the `existingNetworks`
+			// loop above to also include networks by name. Possibly limited to pre-defined names only
+			if _, exists := existingNetworks[network.Target]; exists {
+				return errors.Errorf("service is already attached to network %s", network.Target)
+			}
 			nwID, err := resolveNetworkID(ctx, apiClient, network.Target)
 			if err != nil {
 				return err
