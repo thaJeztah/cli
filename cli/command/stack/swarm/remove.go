@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack/options"
+	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/versions"
+	"github.com/docker/docker/client"
 	"github.com/pkg/errors"
 )
 
@@ -20,6 +23,14 @@ func RunRemove(dockerCli command.Cli, opts options.Remove) error {
 	ctx := context.Background()
 
 	var errs []string
+
+	var pollCtx context.Context
+	var cancel context.CancelFunc
+	if opts.RemoveVolumes {
+		pollCtx, cancel = context.WithTimeout(ctx, 20*time.Second)
+		defer cancel()
+	}
+
 	for _, namespace := range opts.Namespaces {
 		services, err := getStackServices(ctx, client, namespace)
 		if err != nil {
@@ -63,7 +74,11 @@ func RunRemove(dockerCli command.Cli, opts options.Remove) error {
 		hasError = removeSecrets(ctx, dockerCli, secrets) || hasError
 		hasError = removeConfigs(ctx, dockerCli, configs) || hasError
 		hasError = removeNetworks(ctx, dockerCli, networks) || hasError
-		hasError = removeVolumes(ctx, dockerCli, volumes) || hasError
+
+		if opts.RemoveVolumes {
+			waitForTasks(pollCtx, dockerCli, namespace)
+			hasError = removeVolumes(ctx, dockerCli, volumes) || hasError
+		}
 
 		if hasError {
 			errs = append(errs, fmt.Sprintf("Failed to remove some resources from stack: %s", namespace))
@@ -157,4 +172,29 @@ func removeVolumes(ctx context.Context, dockerCli command.Cli, volumes []*types.
 		}
 	}
 	return hasError
+}
+
+func waitForTasks(ctx context.Context, dockerCli command.Cli, namespace string) bool {
+	// TODO poll for task status here
+	tasks, err := getTasks(ctx, dockerCli.Client(), namespace)
+	if err != nil {
+		return false
+	}
+	if len(tasks) == 0 {
+		return true
+	}
+	return false
+}
+
+func getTasks(ctx context.Context, client client.ServiceAPIClient, namespace string) ([]swarm.Task, error) {
+	filter := opts.NewFilterOpt()
+
+	// TODO this should check for actual task status, not desired state?
+	if err := filter.Set("desired-state=running"); err != nil {
+		return nil, err
+	}
+
+	return client.TaskList(ctx, types.TaskListOptions{
+		Filters: getStackFilterFromOpt(namespace, filter),
+	})
 }
