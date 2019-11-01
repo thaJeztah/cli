@@ -27,6 +27,10 @@ func newRemoveCommand(dockerCli command.Cli, common *commonOptions) *cobra.Comma
 		},
 	}
 	flags := cmd.Flags()
+	flags.BoolVarP(&opts.RemoveVolumes, "volumes", "v", false, `Remove named volumes declared in the volumes
+section of the Compose file in addition to
+anonymous volumes attached to containers`)
+	flags.SetAnnotation("volumes", "swarm", nil)
 	kubernetes.AddNamespaceFlag(flags)
 	return cmd
 }

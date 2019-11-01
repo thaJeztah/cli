@@ -28,6 +28,9 @@ Options:
       --kubeconfig string     Kubernetes config file
       --namespace string      Kubernetes namespace to use
       --orchestrator string   Orchestrator to use (swarm|kubernetes|all)
+  -v, --volumes               Remove named volumes declared in the volumes
+                              section of the Compose file in addition to
+                              anonymous volumes attached to containers
 ```
 
 ## Description

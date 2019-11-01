@@ -25,6 +25,20 @@ func TestRemove(t *testing.T) {
 	})
 }
 
+func TestRemoveWithVolume(t *testing.T) {
+	orchestrator := "swarm"
+	stackname := "test-stack-remove-volumes-" + orchestrator
+	result := icmd.RunCommand("docker", "stack", "deploy",
+		"--compose-file=./testdata/full-stack-with-volumes.yml", stackname, "--orchestrator", orchestrator)
+	result.Assert(t, icmd.Success)
+	poll.WaitOn(t, taskCount(orchestrator, stackname, 2), pollSettings)
+
+	defer cleanupFullStack(t, orchestrator, stackname)
+	result = icmd.RunCommand("docker", "stack", "rm", stackname, "--orchestrator", orchestrator)
+	result.Assert(t, icmd.Expected{Err: icmd.None})
+	golden.Assert(t, result.Stdout(), fmt.Sprintf("stack-remove-with-volumes-%s-success.golden", orchestrator))
+}
+
 func testRemove(t *testing.T, orchestrator string) {
 	stackname := "test-stack-remove-" + orchestrator
 	deployFullStack(t, orchestrator, stackname)

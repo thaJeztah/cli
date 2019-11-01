@@ -31,7 +31,8 @@ type PS struct {
 
 // Remove holds docker stack remove options
 type Remove struct {
-	Namespaces []string
+	Namespaces    []string
+	RemoveVolumes bool
 }
 
 // Services holds docker stack services options

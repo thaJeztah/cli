@@ -46,8 +46,15 @@ func RunRemove(dockerCli command.Cli, opts options.Remove) error {
 				return err
 			}
 		}
+		var volumes []*types.Volume
+		if opts.RemoveVolumes {
+			volumes, err = getStackVolumes(ctx, client, namespace)
+			if err != nil {
+				return err
+			}
+		}
 
-		if len(services)+len(networks)+len(secrets)+len(configs) == 0 {
+		if len(services)+len(networks)+len(secrets)+len(configs)+len(volumes) == 0 {
 			fmt.Fprintf(dockerCli.Err(), "Nothing found in stack: %s\n", namespace)
 			continue
 		}
@@ -56,6 +63,7 @@ func RunRemove(dockerCli command.Cli, opts options.Remove) error {
 		hasError = removeSecrets(ctx, dockerCli, secrets) || hasError
 		hasError = removeConfigs(ctx, dockerCli, configs) || hasError
 		hasError = removeNetworks(ctx, dockerCli, networks) || hasError
+		hasError = removeVolumes(ctx, dockerCli, volumes) || hasError
 
 		if hasError {
 			errs = append(errs, fmt.Sprintf("Failed to remove some resources from stack: %s", namespace))
@@ -134,6 +142,18 @@ func removeConfigs(
 		if err := dockerCli.Client().ConfigRemove(ctx, config.ID); err != nil {
 			hasError = true
 			fmt.Fprintf(dockerCli.Err(), "Failed to remove config %s: %s", config.ID, err)
+		}
+	}
+	return hasError
+}
+
+func removeVolumes(ctx context.Context, dockerCli command.Cli, volumes []*types.Volume) bool {
+	var hasError bool
+	for _, volume := range volumes {
+		fmt.Fprintf(dockerCli.Out(), "Removing volume %s\n", volume.Name)
+		if err := dockerCli.Client().VolumeRemove(ctx, volume.Name, true); err != nil {
+			hasError = true
+			fmt.Fprintf(dockerCli.Err(), "Failed to remove volume %s: %s", volume.Name, err)
 		}
 	}
 	return hasError

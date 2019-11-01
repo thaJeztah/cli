@@ -1,0 +1,7 @@
+Removing service test-stack-remove-volumes-swarm_one
+Removing service test-stack-remove-volumes-swarm_two
+Removing network test-stack-remove-volumes-swarm_default
+Removing network test-stack-remove-volumes-swarm_default
+Removing network test-stack-remove-volumes-swarm_default
+Removing volume test-stack-remove-volumes-swarm_volume-one
+Removing volume test-stack-remove-volumes-swarm_volume-two

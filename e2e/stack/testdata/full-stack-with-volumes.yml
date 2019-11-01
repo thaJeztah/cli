@@ -1,0 +1,21 @@
+version: '3.3'
+
+services:
+  one:
+    image: registry:5000/alpine:3.6
+    command: top
+    volumes:
+      - type: volume
+        source: volume-one
+        target: /data
+  two:
+    image: registry:5000/alpine:3.6
+    command: top
+    volumes:
+      - type: volume
+        source: volume-two
+        target: /data
+
+volumes:
+  volume-one:
+  volume-two:
