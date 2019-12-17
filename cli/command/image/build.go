@@ -17,6 +17,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/image/build"
+	"github.com/docker/cli/cli/project"
 	"github.com/docker/cli/opts"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/docker/api"
@@ -99,9 +100,15 @@ func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "build [OPTIONS] PATH | URL | -",
 		Short: "Build an image from a Dockerfile",
-		Args:  cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			options.context = args[0]
+			if len(args) > 0 {
+				options.context = args[0]
+			} else {
+				options.context = "."
+				cfg := project.SelectConfig(dockerCli.Project())
+				options.dockerfileName = cfg.Dockerfile
+				options.context = cfg.Context
+			}
 			return runBuild(dockerCli, options)
 		},
 		Annotations: map[string]string{

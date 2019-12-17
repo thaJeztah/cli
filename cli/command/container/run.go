@@ -11,6 +11,7 @@ import (
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/completion"
+	"github.com/docker/cli/cli/project"
 	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -37,9 +38,12 @@ func NewRunCommand(dockerCli command.Cli) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run [OPTIONS] IMAGE [COMMAND] [ARG...]",
 		Short: "Create and run a new container from an image",
-		Args:  cli.RequiresMinArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			copts.Image = args[0]
+			if len(args) > 0 {
+				copts.Image = args[0]
+			} else {
+				copts.Image = project.SelectImage(dockerCli.Client())
+			}
 			if len(args) > 1 {
 				copts.Args = args[1:]
 			}

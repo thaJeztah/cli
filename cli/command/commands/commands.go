@@ -51,6 +51,7 @@ func AddCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		manifest.NewManifestCommand(dockerCli),
 		network.NewNetworkCommand(dockerCli),
 		plugin.NewPluginCommand(dockerCli),
+		system.NewInitCommand(dockerCli),
 		system.NewSystemCommand(dockerCli),
 		trust.NewTrustCommand(dockerCli),
 		volume.NewVolumeCommand(dockerCli),

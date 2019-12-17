@@ -16,6 +16,7 @@ func NewSystemCommand(dockerCli command.Cli) *cobra.Command {
 	}
 	cmd.AddCommand(
 		NewEventsCommand(dockerCli),
+		NewInitCommand(dockerCli),
 		NewInfoCommand(dockerCli),
 		newDiskUsageCommand(dockerCli),
 		newPruneCommand(dockerCli),

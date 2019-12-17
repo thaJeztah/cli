@@ -65,6 +65,7 @@ type Cli interface {
 	ContextStore() store.Store
 	CurrentContext() string
 	DockerEndpoint() docker.Endpoint
+	Project() string
 }
 
 // DockerCli is an instance the docker command line client.
@@ -85,6 +86,7 @@ type DockerCli struct {
 	dockerEndpoint     docker.Endpoint
 	contextStoreConfig store.Config
 	initTimeout        time.Duration
+	currentProject     string
 }
 
 // DefaultVersion returns api.defaultVersion.
@@ -129,6 +131,11 @@ func (cli *DockerCli) SetIn(in *streams.In) {
 // In returns the reader used for stdin
 func (cli *DockerCli) In() *streams.In {
 	return cli.in
+}
+
+// Project returns the path of the current project
+func (cli *DockerCli) Project() string {
+	return cli.currentProject
 }
 
 // ShowHelp shows the command help.
@@ -219,7 +226,9 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...Initialize
 	}
 	cliflags.SetLogLevel(opts.LogLevel)
 
-	if opts.ConfigDir != "" {
+	if cli.Project() != "" {
+		config.SetDir(cli.Project())
+	} else if opts.ConfigDir != "" {
 		config.SetDir(opts.ConfigDir)
 	}
 
@@ -494,6 +503,7 @@ func NewDockerCli(ops ...DockerCliOption) (*DockerCli, error) {
 		WithContentTrustFromEnv(),
 		WithDefaultContextStoreConfig(),
 		WithStandardStreams(),
+		WithProjectDir(""),
 	}
 	ops = append(defaultOps, ops...)
 
