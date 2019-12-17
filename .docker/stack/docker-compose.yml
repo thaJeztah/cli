@@ -1,0 +1,16 @@
+version: "3.7"
+services:
+  web:
+    image: myweb:latest
+    build:
+      context: ./cli
+      dockerfile: Dockerfile.web
+      args:
+        buildno: 1
+  db:
+    image: mydb:latest
+    build:
+      context: ./cli
+      dockerfile: Dockerfile.db
+      args:
+        buildno: 1

@@ -1,0 +1,3 @@
+FROM alpine
+RUN echo "Stack DB" > /config
+CMD cat /config
