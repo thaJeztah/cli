@@ -94,3 +94,25 @@ func WithContextEndpointType(endpointName string, endpointType store.TypeGetter)
 		return nil
 	}
 }
+
+func WithProjectDir(dir string) DockerCliOption {
+	return func(cli *DockerCli) error {
+		if dir != "" {
+			cli.currentProject = dir
+			return nil
+		} else {
+			fi, err := os.Stat(".docker")
+			if os.IsNotExist(err) {
+				return nil
+			}
+			if err != nil {
+				return err
+			}
+			if !fi.IsDir() {
+				return nil
+			}
+			cli.currentProject = ".docker"
+		}
+		return nil
+	}
+}

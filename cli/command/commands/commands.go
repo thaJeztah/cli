@@ -69,6 +69,7 @@ func AddCommands(cmd *cobra.Command, dockerCli command.Cli) {
 		service.NewServiceCommand(dockerCli),
 
 		// system
+		system.NewInitCommand(dockerCli),
 		system.NewSystemCommand(dockerCli),
 		system.NewVersionCommand(dockerCli),
 
