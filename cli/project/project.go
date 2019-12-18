@@ -41,9 +41,11 @@ func SelectConfig(projectDir string) composetypes.BuildConfig {
 				o := config{Name: f.Name()}
 				o.Type = "Dockerfile"
 				cfg.Dockerfile = filepath.Join(projectDir, f.Name(), "Dockerfile")
+				cfg.Context = "."
 				if d, err := ioutil.ReadFile(filepath.Join(projectDir, f.Name(), "description.txt")); err == nil {
 					o.Description = string(d)
 				}
+				o.Config = cfg
 				options = append(options, o)
 			}
 		}
