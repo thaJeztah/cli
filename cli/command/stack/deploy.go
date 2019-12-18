@@ -1,12 +1,14 @@
 package stack
 
 import (
-	"github.com/docker/cli/cli"
+	"path/filepath"
+
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/stack/loader"
 	"github.com/docker/cli/cli/command/stack/options"
 	"github.com/docker/cli/cli/command/stack/swarm"
 	composetypes "github.com/docker/cli/cli/compose/types"
+	"github.com/docker/cli/cli/project"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -18,9 +20,16 @@ func newDeployCommand(dockerCli command.Cli) *cobra.Command {
 		Use:     "deploy [OPTIONS] STACK",
 		Aliases: []string{"up"},
 		Short:   "Deploy a new stack or update an existing stack",
-		Args:    cli.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			opts.Namespace = args[0]
+			if len(args) > 0 {
+				opts.Namespace = args[0]
+			} else {
+				c := project.SelectComposeFile(dockerCli.Project())
+				cf := filepath.Join(dockerCli.Project(), c, "docker-compose.yml")
+				opts.Namespace = c
+				opts.Composefiles = []string{cf}
+			}
+
 			if err := validateStackName(opts.Namespace); err != nil {
 				return err
 			}

@@ -90,6 +90,46 @@ func SelectConfig(projectDir string) composetypes.BuildConfig {
 	return options[i].Config
 }
 
+func SelectComposeFile(projectDir string) string {
+	files, err := ioutil.ReadDir(projectDir)
+	if err != nil {
+		return ""
+	}
+
+	options := []string{}
+	for _, f := range files {
+		if f.IsDir() {
+			if _, err := os.Stat(filepath.Join(projectDir, f.Name(), "docker-compose.yml")); err == nil {
+				options = append(options, f.Name())
+			}
+		}
+	}
+
+	// The Active and Selected templates set a small config icon next to the name colored and the heat unit for the
+	// active template. The details template is show at the bottom of the select's list and displays the full info
+	// for that config in a multi-line template.
+	templates := &promptui.SelectTemplates{
+		Label: "{{ . }}?",
+	}
+
+	prompt := promptui.Select{
+		Label:     "Select stack",
+		Items:     options,
+		Templates: templates,
+		Size:      4,
+	}
+
+	_, dir, err := prompt.Run()
+
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return ""
+	}
+
+	fmt.Printf("Using stack %q\n", dir)
+	return dir
+}
+
 func SelectImage(apiClient client.APIClient) string {
 	imgs, err := apiClient.ImageList(context.TODO(), types.ImageListOptions{})
 	if err != nil {
