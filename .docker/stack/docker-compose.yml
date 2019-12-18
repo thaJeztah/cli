@@ -13,4 +13,5 @@ services:
       context: ./cli
       dockerfile: Dockerfile.db
       args:
-        buildno: 1
+        CUSTOM_FOO: hello
+      target: stagetwo
