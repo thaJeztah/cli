@@ -100,6 +100,9 @@ func applyBuildConfig(options *buildOptions, cfg composetypes.BuildConfig) {
 	options.context = cfg.Context
 	options.target = cfg.Target
 
+	// HACK: using "Network" to store image:tag
+	_ = options.tags.Set(cfg.Network)
+
 	if len(cfg.Args) > 0 {
 		for key, value := range cfg.Args {
 			var v string

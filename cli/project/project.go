@@ -92,6 +92,37 @@ func SelectConfig(projectDir string) composetypes.BuildConfig {
 	return options[i].Config
 }
 
+func SelectTemplate() string {
+	home, _ := os.UserHomeDir()
+	templateDir := filepath.Join(home, ".docker", "project-templates")
+	files, err := ioutil.ReadDir(templateDir)
+	if err != nil {
+		return ""
+	}
+
+	options := []string{}
+	for _, f := range files {
+		if f.IsDir() {
+			options = append(options, f.Name())
+		}
+	}
+
+	prompt := promptui.Select{
+		Label: "Select Docker template",
+		Items: options,
+		Size:  4,
+	}
+
+	_, dir, err := prompt.Run()
+
+	if err != nil {
+		fmt.Printf("Prompt failed %v\n", err)
+		return ""
+	}
+
+	return filepath.Join(templateDir, dir)
+}
+
 func SelectComposeFile(projectDir string) string {
 	files, err := ioutil.ReadDir(projectDir)
 	if err != nil {
@@ -201,6 +232,11 @@ func getBuildTargets(name, composefile string) []config {
 		if t.Config.Dockerfile != "" {
 			t.Config.Dockerfile = filepath.Join(filepath.Dir(composefile), t.Config.Dockerfile)
 		}
+		// HACK: USING NETWORK TO STORE TAG for now
+		if s.Image != "" {
+			t.Config.Network = s.Image
+		}
+
 		targets = append(targets, t)
 	}
 	return targets
