@@ -16,3 +16,5 @@ cli/winresources/rsrc_amd64.syso
 /docs/yaml/gen/
 coverage.txt
 profile.out
+/.docker/local/
+/.docker/.buildNodeID
