@@ -1,1 +1,1 @@
-Builds the development version of the CLI
+Build the development version of the CLI
