@@ -10,10 +10,8 @@ import (
 
 	"github.com/docker/cli/cli/compose/loader"
 	composetypes "github.com/docker/cli/cli/compose/types"
-
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-
 	"github.com/manifoldco/promptui"
 )
 
@@ -60,10 +58,7 @@ func SelectConfig(projectDir string) composetypes.BuildConfig {
 		Inactive: "  {{ .Name | cyan }} ({{ .Type }})",
 		Selected: promptui.IconSelect + " {{ .Name | cyan }}",
 		Details: `
---------- Config ----------
-{{ "Name:" | faint }}	{{ .Name }}
-{{ "Type:" | faint }}	{{ .Type }}
-{{ "Description:" | faint }}	{{ .Description }}`,
+{{ .Description | faint }}`,
 	}
 
 	// A searcher function is implemented which enabled the search mode for the select. The function follows

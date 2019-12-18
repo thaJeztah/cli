@@ -14,6 +14,8 @@ import (
 	"runtime"
 	"strings"
 
+	composetypes "github.com/docker/cli/cli/compose/types"
+
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/image/build"
@@ -93,6 +95,28 @@ func newBuildOptions() buildOptions {
 	}
 }
 
+func applyBuildConfig(options *buildOptions, cfg composetypes.BuildConfig) {
+	options.dockerfileName = cfg.Dockerfile
+	options.context = cfg.Context
+	options.target = cfg.Target
+
+	if len(cfg.Args) > 0 {
+		for key, value := range cfg.Args {
+			var v string
+			if value == nil {
+				v = os.Getenv(key)
+			} else {
+				v = *value
+
+			}
+			_ = options.buildArgs.Set(key + "=" + v)
+		}
+	}
+	for key, value := range cfg.Labels {
+		_ = options.labels.Set(key + "=" + value)
+	}
+}
+
 // NewBuildCommand creates a new `docker build` command
 func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 	options := newBuildOptions()
@@ -106,8 +130,7 @@ func NewBuildCommand(dockerCli command.Cli) *cobra.Command {
 			} else {
 				options.context = "."
 				cfg := project.SelectConfig(dockerCli.Project())
-				options.dockerfileName = cfg.Dockerfile
-				options.context = cfg.Context
+				applyBuildConfig(&options, cfg)
 			}
 			return runBuild(dockerCli, options)
 		},
