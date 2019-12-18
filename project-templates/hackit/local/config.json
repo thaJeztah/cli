@@ -1,0 +1,6 @@
+{
+  "psFormat":       "table {{.Names}}\\t{{.Image}}\\t{{.Command}}",
+  "experimental":   "enabled",
+  "serviceInspectFormat": "pretty"
+}
+

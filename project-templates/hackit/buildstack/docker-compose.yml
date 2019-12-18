@@ -1,0 +1,15 @@
+version: "3.7"
+services:
+  web:
+    image: thajeztah/myweb:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+  db:
+    image: thajeztah/mydb:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.db
+      args:
+        CUSTOM_FOO: hello
+      target: stagetwo
