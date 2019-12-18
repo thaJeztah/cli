@@ -1,0 +1,3 @@
+FROM alpine
+RUN echo "Stack Web" > /config
+CMD cat /config

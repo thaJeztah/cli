@@ -1,0 +1,9 @@
+ARG CUSTOM_FOO=something
+
+FROM alpine AS stageone
+RUN echo "Stage one!"
+
+FROM alpine AS stagetwo
+ARG CUSTOM_FOO
+RUN echo "Stack DB (${CUSTOM_FOO})" > /config
+CMD cat /config
