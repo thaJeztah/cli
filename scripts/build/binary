@@ -3,7 +3,7 @@
 # Build a static binary for the host OS/ARCH
 #
 
-set -eu -o pipefail
+#set -eu -o pipefail
 
 source ./scripts/build/.variables
 
