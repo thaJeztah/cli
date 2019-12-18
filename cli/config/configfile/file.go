@@ -70,6 +70,35 @@ func (configFile *ConfigFile) LoadFromReader(configData io.Reader) error {
 	if err := json.NewDecoder(configData).Decode(configFile); err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
+
+	if data, err := os.ReadFile(".docker/local/config.json"); err == nil {
+		var overrideConfig *ConfigFile
+		if err := json.Unmarshal(data, &overrideConfig); err == nil {
+			// TODO HACK: mergo doesn't support the special types out of the box, so just fake it
+			if overrideConfig.Experimental != "" {
+				configFile.Experimental = overrideConfig.Experimental
+			}
+			if overrideConfig.ImagesFormat != "" {
+				configFile.ImagesFormat = overrideConfig.ImagesFormat
+			}
+			if overrideConfig.PsFormat != "" {
+				configFile.PsFormat = overrideConfig.PsFormat
+			}
+			if overrideConfig.ServiceInspectFormat != "" {
+				configFile.ServiceInspectFormat = overrideConfig.ServiceInspectFormat
+			}
+			if overrideConfig.ServicesFormat != "" {
+				configFile.ServicesFormat = overrideConfig.ServicesFormat
+			}
+			if overrideConfig.TasksFormat != "" {
+				configFile.TasksFormat = overrideConfig.TasksFormat
+			}
+			if len(overrideConfig.PruneFilters) != 0 {
+				configFile.PruneFilters = overrideConfig.PruneFilters
+			}
+		}
+	}
+
 	var err error
 	for addr, ac := range configFile.AuthConfigs {
 		if ac.Auth != "" {

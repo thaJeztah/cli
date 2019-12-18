@@ -15,3 +15,7 @@ profile.out
 # top-level go.mod is not meant to be checked in
 /go.mod
 /go.sum
+
+# docker init hackday
+/.docker/local/
+/.docker/.buildNodeID
