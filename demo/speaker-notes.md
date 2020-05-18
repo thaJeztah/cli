@@ -6,8 +6,15 @@ To prepare the demo:
 
     cd demo
     ./prepare-demo.sh
-    
-This builds a `docker` cli from the code of this branch, 
+
+This builds the `presentation` image (including the slides), and the `docker` cli
+from the code of this branch.
+
+To present the slides:
+
+    docker run -it --rm presentation
+
+(exit presentation with `q`)
 
 set PATH (pwd)/build $PATH
 rm -rf ./.docker
