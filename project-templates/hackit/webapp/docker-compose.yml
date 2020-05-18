@@ -1,11 +1,21 @@
 version: "3.7"
 services:
   web:
-    image: thajeztah/angry-unicorn:latest
+    image: webapp_web
+    build:
+      context: https://github.com/thaJeztah/angry-unicorn.git
+
     ports:
       - "8080:8080"
     environment:
       TOP_MSG: "My other page is a 500"
       BOTTOM_MSG: "Docker H4ckath0n'ing"
   db:
-    image: thajeztah/angry-unicorn:latest
+    image: webapp_db
+    build:
+      context: https://github.com/thaJeztah/angry-unicorn.git
+      args:
+        TOP_MSG: "Databases are c00l!"
+        BOTTOM_MSG: "Docker H4ckath0n'ing"
+    ports:
+      - "9090:8080"

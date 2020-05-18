@@ -16,12 +16,12 @@ To present the slides:
 
 (exit presentation with `q`)
 
-set PATH (pwd)/build $PATH
-rm -rf ./.docker
+    export PATH=$(pwd):$PATH
+    rm -rf ./.docker
 
 This hack adds a `docker init` sub-command to the cli
 
-    ./docker init --help
+    docker init --help
     Usage:	docker init [OPTIONS]
     
     Initialize a docker project
@@ -34,7 +34,7 @@ The `docker init` sub-command initializes a Docker project by creating a local
 `~/.docker/project-templates` directory (additional "system-wide" paths could be
 added, or templates could be distributed through a registry).
 
-    ./docker init
+    docker init
     Use the arrow keys to navigate: ↓ ↑ → ←
     ? Select Docker template:
       ▸ basic
@@ -161,7 +161,7 @@ selection is not "project" aware, but this could be added. When adding that
 feature, selection could both allow running a single service from the stack
 (interactively), or find all images related to the project:
 
-    ./docker run -it
+    docker run -it
     Use the arrow keys to navigate: ↓ ↑ → ←  and / toggles search
     ? Select image:
         docker-dev:split-resource-types
@@ -172,7 +172,7 @@ feature, selection could both allow running a single service from the stack
 Search is also implemented, which can be useful if many images are present in
 the local image cache (and could even be extended to searching Docker Hub);
 
-    ./docker run -it
+    docker run -it
     Search: ubuntu█
     ? Select image:
       ▸ ubuntu:20.04
