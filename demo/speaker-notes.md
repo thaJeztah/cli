@@ -33,7 +33,7 @@ rm -rf ./.docker
 If you're using Fish:
 
 ```bash
-set PATH (pwd)/build $PATH
+export PATH=$(pwd):$PATH
 rm -rf ./.docker
 ```
 
