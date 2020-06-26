@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"io/ioutil"
-	"os"
 	"testing"
 
 	"github.com/docker/cli/cli"
@@ -14,10 +13,12 @@ import (
 	"github.com/pkg/errors"
 	"gotest.tools/v3/assert"
 	is "gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/fs"
 )
 
 func withDefaultOpts(options execOptions) execOptions {
 	options.env = opts.NewListOpts(opts.ValidateEnv)
+	options.envFile = opts.NewListOpts(nil)
 	if len(options.command) == 0 {
 		options.command = []string{"command"}
 	}
@@ -29,11 +30,8 @@ func TestParseExec(t *testing.T) {
 TWO=2
 	`
 
-	tmpFile := tmpFileWithContent(content, t)
-	defer os.Remove(tmpFile)
-
-	envOptions := withDefaultOpts(execOptions{envFile: tmpFile})
-	envOptions.env.Set("THREE=3")
+	tmpFile := fs.NewFile(t, t.Name(), fs.WithContent(content))
+	defer tmpFile.Remove()
 
 	testcases := []struct {
 		options    execOptions
@@ -120,23 +118,32 @@ TWO=2
 				AttachStderr: true,
 				Env:          []string{"ONE=1", "TWO=2"},
 			},
-			options: withDefaultOpts(execOptions{envFile: tmpFile}),
+			options: func() execOptions {
+				o := withDefaultOpts(execOptions{})
+				o.envFile.Set(tmpFile.Path())
+				return o
+			}(),
 		},
 		{
 			expected: types.ExecConfig{
 				Cmd:          []string{"command"},
 				AttachStdout: true,
 				AttachStderr: true,
-				Env:          []string{"THREE=3", "ONE=1", "TWO=2"},
+				Env:          []string{"ONE=1", "TWO=2", "ONE=override"},
 			},
-			options: envOptions,
+			options: func() execOptions {
+				o := withDefaultOpts(execOptions{})
+				o.env.Set("ONE=override")
+				o.envFile.Set(tmpFile.Path())
+				return o
+			}(),
 		},
 	}
 
 	for _, testcase := range testcases {
 		execConfig, err := parseExec(testcase.options, &testcase.configFile)
-		assert.Check(t, is.DeepEqual(testcase.expected, *execConfig))
 		assert.NilError(t, err)
+		assert.Check(t, is.DeepEqual(testcase.expected, *execConfig))
 	}
 }
 
@@ -254,15 +261,4 @@ func TestNewExecCommandErrors(t *testing.T) {
 		cmd.SetArgs(tc.args)
 		assert.ErrorContains(t, cmd.Execute(), tc.expectedError)
 	}
-}
-
-func tmpFileWithContent(content string, t *testing.T) string {
-	tmpFile, err := ioutil.TempFile("", "envfile-test")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer tmpFile.Close()
-
-	tmpFile.WriteString(content)
-	return tmpFile.Name()
 }

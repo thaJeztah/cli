@@ -24,14 +24,17 @@ type execOptions struct {
 	user        string
 	privileged  bool
 	env         opts.ListOpts
+	envFile     opts.ListOpts
 	workdir     string
 	container   string
 	command     []string
-	envFile     string
 }
 
 func newExecOptions() execOptions {
-	return execOptions{env: opts.NewListOpts(opts.ValidateEnv)}
+	return execOptions{
+		env:     opts.NewListOpts(opts.ValidateEnv),
+		envFile: opts.NewListOpts(nil),
+	}
 }
 
 // NewExecCommand creates a new cobra.Command for `docker exec`
@@ -60,16 +63,16 @@ func NewExecCommand(dockerCli command.Cli) *cobra.Command {
 	flags.BoolVarP(&options.privileged, "privileged", "", false, "Give extended privileges to the command")
 	flags.VarP(&options.env, "env", "e", "Set environment variables")
 	flags.SetAnnotation("env", "version", []string{"1.25"})
+	flags.Var(&options.envFile, "env-file", "Read in a file of environment variables")
+	flags.SetAnnotation("env-file", "version", []string{"1.25"})
 	flags.StringVarP(&options.workdir, "workdir", "w", "", "Working directory inside the container")
 	flags.SetAnnotation("workdir", "version", []string{"1.35"})
-	flags.StringVar(&options.envFile, "env-file", "", "Set environment variables from file")
 
 	return cmd
 }
 
 func runExec(dockerCli command.Cli, options execOptions) error {
 	execConfig, err := parseExec(options, dockerCli.ConfigFile())
-
 	if err != nil {
 		return err
 	}
@@ -203,12 +206,11 @@ func parseExec(execOpts execOptions, configFile *configfile.ConfigFile) (*types.
 		WorkingDir: execOpts.workdir,
 	}
 
-	if execOpts.envFile != "" {
-		envs, err := opts.ParseEnvFile(execOpts.envFile)
-		if err != nil {
-			return nil, err
-		}
-		execConfig.Env = append(execConfig.Env, envs...)
+	// collect all the environment variables for the container
+
+	var err error
+	if execConfig.Env, err = opts.ReadKVEnvStrings(execOpts.envFile.GetAll(), execOpts.env.GetAll()); err != nil {
+		return nil, err
 	}
 
 	// If -d is not set, attach to everything by default
