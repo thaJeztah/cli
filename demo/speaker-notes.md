@@ -30,13 +30,6 @@ export PATH=$(pwd):$PATH
 rm -rf ./.docker
 ```
 
-If you're using Fish:
-
-```bash
-export PATH=$(pwd):$PATH
-rm -rf ./.docker
-```
-
 This hack adds a `docker init` sub-command to the cli
 
 ```bash
