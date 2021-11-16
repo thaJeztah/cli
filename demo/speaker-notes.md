@@ -97,7 +97,9 @@ The `local` directory allows local overrides, for example, to override some CLI
 settings. By default, the `local` directory is excluded from git, so I don't have
 to worry about my personal preferences being committed to source control.
 
+```bash
 echo '{"experimental":"enabled"}' > ./.docker/local/config.json
+```
 
 This is just to illustrate / explore options that we could consider, and if we extend
 the cli configuration with additional options (default namespace/filtering perhaps? only show
@@ -197,7 +199,7 @@ feature, selection could both allow running a single service from the stack
 (interactively), or find all images related to the project:
 
 ```console
-docker run -it
+docker run -it --rm
 Use the arrow keys to navigate: ↓ ↑ → ←  and / toggles search
 ? Select image:
     docker-dev:split-resource-types
@@ -210,7 +212,7 @@ Search is also implemented, which can be useful if many images are present in
 the local image cache (and could even be extended to searching Docker Hub);
 
 ```console
-docker run -it
+docker run -it --rm
 Search: ubuntu█
 ? Select image:
   ▸ ubuntu:20.04
