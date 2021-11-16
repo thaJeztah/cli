@@ -9,7 +9,7 @@ if [ -f ~/.docker/project-templates ]; then
 fi
 
 build_cli() (
-	DISABLE_WARN_OUTSIDE_CONTAINER=1 make -C ../ binary
+	DISABLE_WARN_OUTSIDE_CONTAINER=1 BUILDTIME="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" make -C ../ binary
 	cp -L ../build/docker ./docker
 )
 
