@@ -59,31 +59,27 @@ func processBuilder(dockerCli command.Cli, cmd *cobra.Command, args, osargs []st
 		}
 	}
 
-	// if a builder alias is defined, use it instead
-	// of the default one
-	builderAlias := builderDefaultPlugin
-	aliasMap := dockerCli.ConfigFile().Aliases
-	if v, ok := aliasMap[keyBuilderAlias]; ok {
-		useBuilder = true
-		builderAlias = v
+	// BuildKit does not yet support Windows, so use classic builder
+	if dockerCli.ServerInfo().OSType == "windows" {
+		return args, osargs, nil
 	}
 
 	// is this a build that should be forwarded to the builder?
-	fwargs, fwosargs, forwarded := forwardBuilder(builderAlias, args, osargs)
+	fwargs, fwosargs, forwarded := forwardBuilder(args, osargs)
 	if !forwarded {
 		return args, osargs, nil
 	}
 
 	if useLegacy {
-		// display warning if not wcow and not in quiet mode and continue
-		if !isQuietBuild(fwargs, fwosargs) && dockerCli.ServerInfo().OSType != "windows" {
+		// display warning if not in quiet mode and continue
+		if !isQuietBuild(fwargs, fwosargs) {
 			_, _ = fmt.Fprintln(dockerCli.Err(), newBuilderError(true, nil))
 		}
 		return args, osargs, nil
 	}
 
 	// check plugin is available if cmd forwarded
-	plugin, perr := pluginmanager.GetPlugin(builderAlias, dockerCli, cmd.Root())
+	plugin, perr := pluginmanager.GetPlugin(builderDefaultPlugin, dockerCli, cmd.Root())
 	if perr == nil && plugin != nil {
 		perr = plugin.Err
 	}
@@ -100,19 +96,19 @@ func processBuilder(dockerCli command.Cli, cmd *cobra.Command, args, osargs []st
 	return fwargs, fwosargs, nil
 }
 
-func forwardBuilder(alias string, args, osargs []string) ([]string, []string, bool) {
+func forwardBuilder(args, osargs []string) ([]string, []string, bool) {
 	aliases := [][2][]string{
 		{
 			{"builder"},
-			{alias},
+			{"buildx"},
 		},
 		{
 			{"build"},
-			{alias, "build"},
+			{"buildx", "build"},
 		},
 		{
 			{"image", "build"},
-			{alias, "build"},
+			{"buildx", "build"},
 		},
 	}
 	for _, al := range aliases {

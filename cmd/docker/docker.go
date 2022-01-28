@@ -228,7 +228,7 @@ func runDocker(dockerCli *command.DockerCli) error {
 		return err
 	}
 
-	args, os.Args, err = processAliases(dockerCli, cmd, args, os.Args)
+	args, os.Args, err = processBuilder(dockerCli, cmd, args, os.Args)
 	if err != nil {
 		return err
 	}
