@@ -13,33 +13,41 @@ import (
 	"github.com/docker/cli/cli/command/completion"
 	"github.com/docker/cli/cli/command/formatter"
 	flagsHelper "github.com/docker/cli/cli/flags"
+	"github.com/docker/cli/opts"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
-	"github.com/docker/docker/api/types/filters"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
 
-type statsOptions struct {
-	all        bool
-	noStream   bool
-	noTrunc    bool
-	format     string
-	containers []string
+// StatsOptions defines options for [RunStats].
+type StatsOptions struct {
+	All        bool
+	NoStream   bool
+	NoTrunc    bool
+	Format     string
+	Containers []string
+	Filter     opts.FilterOpt
+}
+
+func NewStatsOptions() StatsOptions {
+	return StatsOptions{
+		Filter: opts.NewFilterOpt(),
+	}
 }
 
 // NewStatsCommand creates a new [cobra.Command] for "docker stats".
 func NewStatsCommand(dockerCLI command.Cli) *cobra.Command {
-	var options statsOptions
+	options := NewStatsOptions()
 
 	cmd := &cobra.Command{
 		Use:   "stats [OPTIONS] [CONTAINER...]",
 		Short: "Display a live stream of container(s) resource usage statistics",
 		Args:  cli.RequiresMinArgs(0),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			options.containers = args
-			return runStats(cmd.Context(), dockerCLI, &options)
+			options.Containers = args
+			return RunStats(cmd.Context(), dockerCLI, &options)
 		},
 		Annotations: map[string]string{
 			"aliases": "docker container stats, docker stats",
@@ -48,18 +56,18 @@ func NewStatsCommand(dockerCLI command.Cli) *cobra.Command {
 	}
 
 	flags := cmd.Flags()
-	flags.BoolVarP(&options.all, "all", "a", false, "Show all containers (default shows just running)")
-	flags.BoolVar(&options.noStream, "no-stream", false, "Disable streaming stats and only pull the first result")
-	flags.BoolVar(&options.noTrunc, "no-trunc", false, "Do not truncate output")
-	flags.StringVar(&options.format, "format", "", flagsHelper.FormatHelp)
+	flags.BoolVarP(&options.All, "all", "a", false, "Show all containers (default shows just running)")
+	flags.BoolVar(&options.NoStream, "no-stream", false, "Disable streaming stats and only pull the first result")
+	flags.BoolVar(&options.NoTrunc, "no-trunc", false, "Do not truncate output")
+	flags.StringVar(&options.Format, "format", "", flagsHelper.FormatHelp)
 	return cmd
 }
 
-// runStats displays a live stream of resource usage statistics for one or more containers.
+// RunStats displays a live stream of resource usage statistics for one or more containers.
 // This shows real-time information on CPU usage, memory usage, and network I/O.
 //
 //nolint:gocyclo
-func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions) error {
+func RunStats(ctx context.Context, dockerCLI command.Cli, options *StatsOptions) error {
 	apiClient := dockerCLI.Client()
 
 	// Get the daemonOSType if not set already
@@ -76,7 +84,7 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 	closeChan := make(chan error)
 	cStats := stats{}
 
-	showAll := len(options.containers) == 0
+	showAll := len(options.Containers) == 0
 	if showAll {
 		// If no names were specified, start a long-running goroutine which
 		// monitors container events. We make sure we're subscribed before
@@ -84,12 +92,12 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 		// would "miss" a creation.
 		started := make(chan struct{})
 		eh := command.InitEventHandler()
-		if options.all {
+		if options.All {
 			eh.Handle(events.ActionCreate, func(e events.Message) {
 				s := NewStats(e.Actor.ID[:12])
 				if cStats.add(s) {
 					waitFirst.Add(1)
-					go collect(ctx, s, apiClient, !options.noStream, waitFirst)
+					go collect(ctx, s, apiClient, !options.NoStream, waitFirst)
 				}
 			})
 		}
@@ -98,11 +106,11 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 			s := NewStats(e.Actor.ID[:12])
 			if cStats.add(s) {
 				waitFirst.Add(1)
-				go collect(ctx, s, apiClient, !options.noStream, waitFirst)
+				go collect(ctx, s, apiClient, !options.NoStream, waitFirst)
 			}
 		})
 
-		if !options.all {
+		if !options.All {
 			eh.Handle(events.ActionDie, func(e events.Message) {
 				cStats.remove(e.Actor.ID[:12])
 			})
@@ -111,7 +119,7 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 		// monitorContainerEvents watches for container creation and removal (only
 		// used when calling `docker stats` without arguments).
 		monitorContainerEvents := func(started chan<- struct{}, c chan events.Message, stopped <-chan struct{}) {
-			f := filters.NewArgs()
+			f := options.Filter.Value()
 			f.Add("type", string(events.ContainerEventType))
 			eventChan, errChan := apiClient.Events(ctx, types.EventsOptions{
 				Filters: f,
@@ -139,7 +147,8 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 		// containers (only used when calling `docker stats` without arguments).
 		getContainerList := func() {
 			cs, err := apiClient.ContainerList(ctx, container.ListOptions{
-				All: options.all,
+				All:     options.All,
+				Filters: options.Filter.Value(),
 			})
 			if err != nil {
 				closeChan <- err
@@ -148,7 +157,7 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 				s := NewStats(ctr.ID[:12])
 				if cStats.add(s) {
 					waitFirst.Add(1)
-					go collect(ctx, s, apiClient, !options.noStream, waitFirst)
+					go collect(ctx, s, apiClient, !options.NoStream, waitFirst)
 				}
 			}
 		}
@@ -169,11 +178,11 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 	} else {
 		// Artificially send creation events for the containers we were asked to
 		// monitor (same code path than we use when monitoring all containers).
-		for _, name := range options.containers {
+		for _, name := range options.Containers {
 			s := NewStats(name)
 			if cStats.add(s) {
 				waitFirst.Add(1)
-				go collect(ctx, s, apiClient, !options.noStream, waitFirst)
+				go collect(ctx, s, apiClient, !options.NoStream, waitFirst)
 			}
 		}
 
@@ -196,7 +205,7 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 		}
 	}
 
-	format := options.format
+	format := options.Format
 	if len(format) == 0 {
 		if len(dockerCLI.ConfigFile().StatsFormat) > 0 {
 			format = dockerCLI.ConfigFile().StatsFormat
@@ -209,7 +218,7 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 		Format: NewStatsFormat(format, daemonOSType),
 	}
 	cleanScreen := func() {
-		if !options.noStream {
+		if !options.NoStream {
 			_, _ = fmt.Fprint(dockerCLI.Out(), "\033[2J")
 			_, _ = fmt.Fprint(dockerCLI.Out(), "\033[H")
 		}
@@ -226,13 +235,13 @@ func runStats(ctx context.Context, dockerCLI command.Cli, options *statsOptions)
 			ccStats = append(ccStats, c.GetStatistics())
 		}
 		cStats.mu.RUnlock()
-		if err = statsFormatWrite(statsCtx, ccStats, daemonOSType, !options.noTrunc); err != nil {
+		if err = statsFormatWrite(statsCtx, ccStats, daemonOSType, !options.NoTrunc); err != nil {
 			break
 		}
 		if len(cStats.cs) == 0 && !showAll {
 			break
 		}
-		if options.noStream {
+		if options.NoStream {
 			break
 		}
 		select {
