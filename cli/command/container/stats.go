@@ -17,6 +17,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/events"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 )
@@ -119,7 +120,19 @@ func RunStats(ctx context.Context, dockerCLI command.Cli, options *StatsOptions)
 		// monitorContainerEvents watches for container creation and removal (only
 		// used when calling `docker stats` without arguments).
 		monitorContainerEvents := func(started chan<- struct{}, c chan events.Message, stopped <-chan struct{}) {
-			f := options.Filter.Value()
+			// FIXME(thaJeztah): the intent here is to filter events on container properties (labels, container-ID's)
+			// however, the same filter is also used to get the initial list of containers (getContainerList below).
+			//
+			// Filters for containers may be different than for container EVENTS, e.g.:
+			//
+			// - container.ID vs event.Actor.ID
+			// - container.Labels vs event.Attributes.<label-name>
+			//
+			// Note that labels is specifically complicated due to the unfortunate
+			// decision to merge "known" attributes (image, name) with labels, so
+			// a label "name" or "image" cannot be used (less problematic for
+			// namespaced labels, such as com.docker.compose etc).
+			f := filters.NewArgs()
 			f.Add("type", string(events.ContainerEventType))
 			eventChan, errChan := apiClient.Events(ctx, types.EventsOptions{
 				Filters: f,
@@ -146,6 +159,8 @@ func RunStats(ctx context.Context, dockerCLI command.Cli, options *StatsOptions)
 		// getContainerList simulates creation event for all previously existing
 		// containers (only used when calling `docker stats` without arguments).
 		getContainerList := func() {
+			// FIXME(thaJeztah): the intent here is to filter containers on properties such as labels, container-ID's,
+			// however, the same filter is also used to filter EVENTS (see monitorContainerEvents above).
 			cs, err := apiClient.ContainerList(ctx, container.ListOptions{
 				All:     options.All,
 				Filters: options.Filter.Value(),
