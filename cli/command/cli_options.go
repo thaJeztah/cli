@@ -115,3 +115,12 @@ func WithAPIClient(c client.APIClient) CLIOption {
 		return nil
 	}
 }
+
+// WithContext sets the base context for the cli
+// This is used internally for operations may require a context to propagate tracing.
+func WithContext(ctx context.Context) CLIOption {
+	return func(cli *DockerCli) error {
+		cli.baseCtx = ctx
+		return nil
+	}
+}

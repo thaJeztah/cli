@@ -92,12 +92,6 @@ type DockerCli struct {
 	baseCtx context.Context
 }
 
-// WithContext sets the base context for the cli
-// This is used internally for operations may require a context to propagate tracing.
-func (cli *DockerCli) WithContext(ctx context.Context) {
-	cli.baseCtx = ctx
-}
-
 // DefaultVersion returns api.defaultVersion.
 func (cli *DockerCli) DefaultVersion() string {
 	return api.DefaultVersion

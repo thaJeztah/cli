@@ -60,8 +60,7 @@ func newDockerCommand(dockerCli *command.DockerCli) *cli.TopLevelCommand {
 
 			ctx, _ := otel.Tracer("").Start(cmd.Context(), name)
 			cmd.SetContext(ctx)
-			dockerCli.WithContext(ctx)
-
+			_ = dockerCli.Apply(command.WithContext(ctx))
 			return nil
 		},
 		PersistentPostRun: func(cmd *cobra.Command, args []string) {
