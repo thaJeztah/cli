@@ -20,13 +20,16 @@ import (
 	platformsignals "github.com/docker/cli/cmd/docker/internal/signals"
 	"github.com/docker/distribution/uuid"
 	"github.com/docker/docker/api/types/versions"
-	"github.com/moby/buildkit/util/tracing/detect"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
+	"go.opentelemetry.io/contrib/exporters/autoexport"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
+	"go.opentelemetry.io/otel/sdk/resource"
+	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -311,15 +314,8 @@ func runDocker(dockerCli *command.DockerCli) error {
 		os.Setenv("OTEL_SERVICE_NAME", cmd.Root().Name())
 	}
 
-	tp, err := detect.TracerProvider()
-	if err != nil {
+	if err := initializeTracing(); err != nil {
 		logrus.WithError(err).Debug("Failed to initialize tracing")
-	}
-
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	if tp != nil {
-		otel.SetTracerProvider(tp)
-		defer detect.Shutdown(context.Background())
 	}
 
 	var envs []string
@@ -355,6 +351,39 @@ func runDocker(dockerCli *command.DockerCli) error {
 	// which remain.
 	cmd.SetArgs(args)
 	return cmd.Execute()
+}
+
+func initializeTracing() error {
+	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
+
+	exporter, err := autoexport.NewSpanExporter(context.Background())
+	if err != nil {
+		return fmt.Errorf("creating span exporter: %w", err)
+	}
+	sp := sdktrace.NewBatchSpanProcessor(exporter)
+
+	// create a default resource but specify the service name explicitly, or
+	// it will be `unknown_service:<name_of_exe>`
+	//
+	// N.B. a schemaless resource is used with the STABLE semconv value of
+	// `service.name` to avoid https://github.com/open-telemetry/opentelemetry-go/issues/2341
+	res, err := resource.Merge(
+		resource.Default(),
+		resource.NewSchemaless(
+			attribute.String("service.name", "docker-cli"),
+		),
+	)
+	if err != nil {
+		return fmt.Errorf("merging resource: %w", err)
+	}
+
+	tp := sdktrace.NewTracerProvider(
+		sdktrace.WithSpanProcessor(sp),
+		sdktrace.WithResource(res),
+	)
+	otel.SetTracerProvider(tp)
+
+	return nil
 }
 
 func main() {

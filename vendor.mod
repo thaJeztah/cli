@@ -22,7 +22,6 @@ require (
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510
 	github.com/mattn/go-runewidth v0.0.15
 	github.com/mitchellh/mapstructure v1.5.0
-	github.com/moby/buildkit v0.12.4
 	github.com/moby/patternmatcher v0.6.0
 	github.com/moby/swarmkit/v2 v2.0.0-20230911190601-f082dd7a0cee
 	github.com/moby/sys/sequential v0.5.0
@@ -38,7 +37,9 @@ require (
 	github.com/theupdateframework/notary v0.7.1-0.20210315103452-bf96a202a09a
 	github.com/tonistiigi/go-rosetta v0.0.0-20200727161949-f79598599c5d
 	github.com/xeipuuv/gojsonschema v1.2.0
+	go.opentelemetry.io/contrib/exporters/autoexport v0.45.0
 	go.opentelemetry.io/otel v1.19.0
+	go.opentelemetry.io/otel/sdk v1.19.0
 	go.opentelemetry.io/otel/trace v1.19.0
 	golang.org/x/sync v0.3.0
 	golang.org/x/sys v0.15.0
@@ -85,7 +86,6 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.19.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.19.0 // indirect
 	go.opentelemetry.io/otel/metric v1.19.0 // indirect
-	go.opentelemetry.io/otel/sdk v1.19.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.0.0 // indirect
 	golang.org/x/crypto v0.17.0 // indirect
 	golang.org/x/mod v0.11.0 // indirect

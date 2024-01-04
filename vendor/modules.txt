@@ -188,10 +188,6 @@ github.com/miekg/pkcs11
 # github.com/mitchellh/mapstructure v1.5.0
 ## explicit; go 1.14
 github.com/mitchellh/mapstructure
-# github.com/moby/buildkit v0.12.4
-## explicit; go 1.20
-github.com/moby/buildkit/util/bklog
-github.com/moby/buildkit/util/tracing/detect
 # github.com/moby/patternmatcher v0.6.0
 ## explicit; go 1.19
 github.com/moby/patternmatcher
@@ -294,6 +290,9 @@ github.com/xeipuuv/gojsonschema
 # go.etcd.io/etcd/raft/v3 v3.5.6
 ## explicit; go 1.16
 go.etcd.io/etcd/raft/v3/raftpb
+# go.opentelemetry.io/contrib/exporters/autoexport v0.45.0
+## explicit; go 1.19
+go.opentelemetry.io/contrib/exporters/autoexport
 # go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.45.0
 ## explicit; go 1.19
 go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp
@@ -341,7 +340,6 @@ go.opentelemetry.io/otel/sdk/internal
 go.opentelemetry.io/otel/sdk/internal/env
 go.opentelemetry.io/otel/sdk/resource
 go.opentelemetry.io/otel/sdk/trace
-go.opentelemetry.io/otel/sdk/trace/tracetest
 # go.opentelemetry.io/otel/trace v1.19.0
 ## explicit; go 1.20
 go.opentelemetry.io/otel/trace
