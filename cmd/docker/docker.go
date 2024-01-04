@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/docker/cli/cli"
 	pluginmanager "github.com/docker/cli/cli-plugins/manager"
@@ -24,12 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
-	"go.opentelemetry.io/contrib/exporters/autoexport"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/sdk/resource"
-	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -302,20 +298,17 @@ func runDocker(dockerCli *command.DockerCli) error {
 		return err
 	}
 
-	// Buildkit's detect package currently follows the old otel spec which defaulted to gRPC.
-	// Since the spec changed to default to http/protobuf.
-	// If these env vars are not set then we set them to the new default so detect will give us the expected protocol.
-	// This is the same as on the dockerd side.
-	// This can be removed after buildkit's detect package is updated.
-	if os.Getenv("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL") == "" && os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL") == "" {
-		os.Setenv("OTEL_EXPORTER_OTLP_TRACES_PROTOCOL", "http/protobuf")
-	}
-	if v := os.Getenv("OTEL_SERVICE_NAME"); v == "" {
-		os.Setenv("OTEL_SERVICE_NAME", cmd.Root().Name())
-	}
-
-	if err := initializeTracing(); err != nil {
+	if shutdownFunc, err := initializeTracing(cmd.Root().Name()); err != nil {
 		logrus.WithError(err).Debug("Failed to initialize tracing")
+	} else if shutdownFunc != nil {
+		defer func() {
+			// flush out spans but do not allow the CLI to hang indefinitely
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+			defer cancel()
+			if err := shutdownFunc(shutdownCtx); err != nil {
+				logrus.WithError(err).Debug("Failed to shutdown tracing")
+			}
+		}()
 	}
 
 	var envs []string
@@ -351,39 +344,6 @@ func runDocker(dockerCli *command.DockerCli) error {
 	// which remain.
 	cmd.SetArgs(args)
 	return cmd.Execute()
-}
-
-func initializeTracing() error {
-	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
-	exporter, err := autoexport.NewSpanExporter(context.Background())
-	if err != nil {
-		return fmt.Errorf("creating span exporter: %w", err)
-	}
-	sp := sdktrace.NewBatchSpanProcessor(exporter)
-
-	// create a default resource but specify the service name explicitly, or
-	// it will be `unknown_service:<name_of_exe>`
-	//
-	// N.B. a schemaless resource is used with the STABLE semconv value of
-	// `service.name` to avoid https://github.com/open-telemetry/opentelemetry-go/issues/2341
-	res, err := resource.Merge(
-		resource.Default(),
-		resource.NewSchemaless(
-			attribute.String("service.name", "docker-cli"),
-		),
-	)
-	if err != nil {
-		return fmt.Errorf("merging resource: %w", err)
-	}
-
-	tp := sdktrace.NewTracerProvider(
-		sdktrace.WithSpanProcessor(sp),
-		sdktrace.WithResource(res),
-	)
-	otel.SetTracerProvider(tp)
-
-	return nil
 }
 
 func main() {
