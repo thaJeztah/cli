@@ -2,11 +2,11 @@ package manager
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/docker/cli/cli/config/credentials"
 	"github.com/docker/cli/cli/version"
-	"github.com/shirou/gopsutil/v3/host"
 )
 
 const (
@@ -16,11 +16,6 @@ const (
 )
 
 func NewManager(store credentials.Store) (*OAuthManager, error) {
-	hostinfo, err := host.Info()
-	if err != nil {
-		return nil, err
-	}
-
 	cliVersion := strings.ReplaceAll(version.Version, ".", "_")
 	options := OAuthManagerOptions{
 		Audience:   audience,
@@ -30,10 +25,11 @@ func NewManager(store credentials.Store) (*OAuthManager, error) {
 		Store:      store,
 	}
 
-	if hostinfo != nil {
-		hostVersion := strings.ReplaceAll(hostinfo.PlatformVersion, ".", "_")
-		options.DeviceName = fmt.Sprintf("docker-cli:%s:%s-%s-%s", cliVersion, hostinfo.OS, hostVersion, hostinfo.KernelArch)
-	}
+	// FIXME(thaJeztah): what information do we need here? Would https://github.com/moby/moby/blob/1205a9073320fba9e67fa5de3857f0330e56ce50/pkg/parsers/kernel/kernel_darwin.go#L13-L24 work?
+	// hostVersion := strings.ReplaceAll(hostinfo.PlatformVersion, ".", "_")
+	hostVersion := "unknown"
+	// options.DeviceName = fmt.Sprintf("docker-cli:%s:%s-%s-%s", cliVersion, hostinfo.OS, hostVersion, hostinfo.KernelArch)
+	options.DeviceName = fmt.Sprintf("docker-cli:%s:%s-%s-%s", cliVersion, runtime.GOOS, hostVersion, runtime.GOARCH)
 
 	authManager, err := New(options)
 	if err != nil {
