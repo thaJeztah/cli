@@ -2,8 +2,10 @@ package image
 
 import (
 	"context"
+	"fmt"
 	"io"
 
+	"github.com/containerd/platforms"
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/command/completion"
@@ -15,8 +17,9 @@ import (
 )
 
 type loadOptions struct {
-	input string
-	quiet bool
+	input    string
+	quiet    bool
+	platform string
 }
 
 // NewLoadCommand creates a new `docker load` command
@@ -40,6 +43,13 @@ func NewLoadCommand(dockerCli command.Cli) *cobra.Command {
 
 	flags.StringVarP(&opts.input, "input", "i", "", "Read from tar archive file, instead of STDIN")
 	flags.BoolVarP(&opts.quiet, "quiet", "q", false, "Suppress the load output")
+	flags.StringVar(&opts.platform, "platform", "",
+		`Specify a platform from a multi-platform image to load.
+If a platform is not specified, and the image is a multi-platform image, all platforms are loaded.
+
+Format: "os[/arch[/variant]]"
+Example: "docker image load --platform linux/amd64"`)
+	flags.SetAnnotation("platform", "version", []string{"1.47"})
 
 	return cmd
 }
@@ -66,6 +76,15 @@ func runLoad(ctx context.Context, dockerCli command.Cli, opts loadOptions) error
 	var loadOpts image.LoadOptions
 	if opts.quiet || !dockerCli.Out().IsTerminal() {
 		loadOpts.Quiet = true
+	}
+
+	if opts.platform != "" {
+		p, err := platforms.Parse(opts.platform)
+		if err != nil {
+			_, _ = fmt.Fprintf(dockerCli.Err(), "Invalid platform %s", opts.platform)
+			return err
+		}
+		loadOpts.Platform = &p
 	}
 
 	response, err := dockerCli.Client().ImageLoad(ctx, input, loadOpts)
