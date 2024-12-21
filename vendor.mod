@@ -6,6 +6,9 @@ module github.com/docker/cli
 
 go 1.22.0
 
+// FIXME(thaJeztah): testing https://github.com/moby/moby/pull/49162 (pkg_system_volume_uuid branch)
+replace github.com/docker/docker => github.com/thaJeztah/docker v24.0.0-rc.1.0.20241221133943-c759fb20d64a+incompatible
+
 require (
 	dario.cat/mergo v1.0.1
 	github.com/containerd/platforms v0.2.1
