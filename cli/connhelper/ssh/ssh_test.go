@@ -51,24 +51,36 @@ func TestParseURL(t *testing.T) {
 			},
 		},
 		{
-			url:           "ssh://me:passw0rd@example.com",
-			expectedError: "plain-text password is not supported",
+			url:           "malformed %%url",
+			expectedError: `invalid ssh URL: invalid URL escape "%%u"`,
 		},
 		{
-			url:           "ssh://example.com?bar",
-			expectedError: `extra query after the host: "bar"`,
+			url:           "no-scheme.example.com",
+			expectedError: "invalid ssh URL: no scheme provided",
+		},
+		{
+			url:           "ssh://me:passw0rd@example.com",
+			expectedError: "invalid ssh URL: plain-text password is not supported",
+		},
+		{
+			url:           "ssh://example.com?foo=bar&bar=baz",
+			expectedError: `invalid ssh URL: query parameters are not allowed: "foo=bar&bar=baz"`,
 		},
 		{
 			url:           "ssh://example.com#bar",
-			expectedError: `extra fragment after the host: "bar"`,
+			expectedError: `invalid ssh URL: fragments are not allowed: "bar"`,
 		},
 		{
 			url:           "ssh://",
-			expectedError: "no host specified",
+			expectedError: "invalid ssh URL: hostname is empty",
 		},
 		{
-			url:           "foo://example.com",
-			expectedError: `expected scheme ssh, got "foo"`,
+			url:           "ssh:///no-hostname",
+			expectedError: "invalid ssh URL: hostname is empty",
+		},
+		{
+			url:           "https://example.com",
+			expectedError: `invalid ssh URL: incorrect scheme: https`,
 		},
 	}
 	for _, tc := range testCases {
