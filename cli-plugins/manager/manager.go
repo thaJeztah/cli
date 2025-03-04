@@ -9,7 +9,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/docker/cli/cli/command"
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/fvbommel/sortorder"
@@ -114,8 +113,13 @@ func listPluginCandidates(dirs []string) map[string][]string {
 	return result
 }
 
+// ConfigProvider defines an interface for providing the CLI config.
+type ConfigProvider interface {
+	ConfigFile() *configfile.ConfigFile
+}
+
 // GetPlugin returns a plugin on the system by its name
-func GetPlugin(name string, dockerCli command.Cli, rootcmd *cobra.Command) (*Plugin, error) {
+func GetPlugin(name string, dockerCli ConfigProvider, rootcmd *cobra.Command) (*Plugin, error) {
 	pluginDirs, err := getPluginDirs(dockerCli.ConfigFile())
 	if err != nil {
 		return nil, err
@@ -141,7 +145,7 @@ func GetPlugin(name string, dockerCli command.Cli, rootcmd *cobra.Command) (*Plu
 }
 
 // ListPlugins produces a list of the plugins available on the system
-func ListPlugins(dockerCli command.Cli, rootcmd *cobra.Command) ([]Plugin, error) {
+func ListPlugins(dockerCli ConfigProvider, rootcmd *cobra.Command) ([]Plugin, error) {
 	pluginDirs, err := getPluginDirs(dockerCli.ConfigFile())
 	if err != nil {
 		return nil, err
@@ -188,7 +192,7 @@ func ListPlugins(dockerCli command.Cli, rootcmd *cobra.Command) ([]Plugin, error
 // PluginRunCommand returns an "os/exec".Cmd which when .Run() will execute the named plugin.
 // The rootcmd argument is referenced to determine the set of builtin commands in order to detect conficts.
 // The error returned satisfies the IsNotFound() predicate if no plugin was found or if the first candidate plugin was invalid somehow.
-func PluginRunCommand(dockerCli command.Cli, name string, rootcmd *cobra.Command) (*exec.Cmd, error) {
+func PluginRunCommand(dockerCli ConfigProvider, name string, rootcmd *cobra.Command) (*exec.Cmd, error) {
 	// This uses the full original args, not the args which may
 	// have been provided by cobra to our caller. This is because
 	// they lack e.g. global options which we must propagate here.

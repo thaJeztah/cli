@@ -5,7 +5,6 @@ import (
 	"os"
 	"sync"
 
-	"github.com/docker/cli/cli/command"
 	"github.com/spf13/cobra"
 )
 
@@ -41,10 +40,10 @@ var pluginCommandStubsOnce sync.Once
 // AddPluginCommandStubs adds a stub cobra.Commands for each valid and invalid
 // plugin. The command stubs will have several annotations added, see
 // `CommandAnnotationPlugin*`.
-func AddPluginCommandStubs(dockerCli command.Cli, rootCmd *cobra.Command) (err error) {
+func AddPluginCommandStubs(dockerCLI ConfigProvider, rootCmd *cobra.Command) (err error) {
 	pluginCommandStubsOnce.Do(func() {
 		var plugins []Plugin
-		plugins, err = ListPlugins(dockerCli, rootCmd)
+		plugins, err = ListPlugins(dockerCLI, rootCmd)
 		if err != nil {
 			return
 		}
@@ -86,7 +85,7 @@ func AddPluginCommandStubs(dockerCli command.Cli, rootCmd *cobra.Command) (err e
 					cargs = append(cargs, args...)
 					cargs = append(cargs, toComplete)
 					os.Args = cargs
-					runCommand, runErr := PluginRunCommand(dockerCli, p.Name, cmd)
+					runCommand, runErr := PluginRunCommand(dockerCLI, p.Name, cmd)
 					if runErr != nil {
 						return nil, cobra.ShellCompDirectiveError
 					}
