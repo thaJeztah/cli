@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	pluginmanager "github.com/docker/cli/cli-plugins/manager"
+	"github.com/docker/cli/cli-plugins/plugin/metadata"
 	"github.com/docker/cli/cli/command"
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/fvbommel/sortorder"
@@ -251,7 +251,7 @@ func hasAdditionalHelp(cmd *cobra.Command) bool {
 }
 
 func isPlugin(cmd *cobra.Command) bool {
-	return pluginmanager.IsPluginCommand(cmd)
+	return cmd.Annotations[metadata.CommandAnnotationPlugin] == "true"
 }
 
 func hasAliases(cmd *cobra.Command) bool {
@@ -355,9 +355,9 @@ func decoratedName(cmd *cobra.Command) string {
 }
 
 func vendorAndVersion(cmd *cobra.Command) string {
-	if vendor, ok := cmd.Annotations[pluginmanager.CommandAnnotationPluginVendor]; ok && isPlugin(cmd) {
+	if vendor, ok := cmd.Annotations[metadata.CommandAnnotationPluginVendor]; ok && isPlugin(cmd) {
 		version := ""
-		if v, ok := cmd.Annotations[pluginmanager.CommandAnnotationPluginVersion]; ok && v != "" {
+		if v, ok := cmd.Annotations[metadata.CommandAnnotationPluginVersion]; ok && v != "" {
 			version = ", " + v
 		}
 		return fmt.Sprintf("(%s%s)", vendor, version)
@@ -416,7 +416,7 @@ func invalidPlugins(cmd *cobra.Command) []*cobra.Command {
 }
 
 func invalidPluginReason(cmd *cobra.Command) string {
-	return cmd.Annotations[pluginmanager.CommandAnnotationPluginInvalid]
+	return cmd.Annotations[metadata.CommandAnnotationPluginInvalid]
 }
 
 const usageTemplate = `Usage:
