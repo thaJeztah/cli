@@ -8,6 +8,7 @@ import (
 	manifeststore "github.com/docker/cli/cli/manifest/store"
 	registryclient "github.com/docker/cli/cli/registry/client"
 	"github.com/docker/cli/cli/trust"
+	mounttypes "github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/registry"
 	notaryclient "github.com/theupdateframework/notary/client"
 )
@@ -53,4 +54,11 @@ func (cli *DockerCli) RegistryClient(allowInsecure bool) registryclient.Registry
 		return ResolveAuthConfig(cli.ConfigFile(), index)
 	}
 	return registryclient.NewRegistryClient(resolver, UserAgent(), allowInsecure)
+}
+
+// ValidateMountWithAPIVersion validates a mount with the server API version.
+//
+// Deprecated: this function is no longer used and now handled by [client.APIClient] it always returns nil.
+func ValidateMountWithAPIVersion(mounttypes.Mount, string) error {
+	return nil
 }
