@@ -22,7 +22,6 @@ import (
 	"github.com/docker/cli/templates"
 	"github.com/docker/docker/api/types/swarm"
 	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/client"
 	"github.com/docker/docker/registry"
 	"github.com/docker/go-units"
 	"github.com/spf13/cobra"
@@ -81,7 +80,7 @@ func NewInfoCommand(dockerCli command.Cli) *cobra.Command {
 	return cmd
 }
 
-func runInfo(ctx context.Context, cmd *cobra.Command, dockerCli command.Cli, opts *infoOptions) error {
+func runInfo(ctx context.Context, cmd *cobra.Command, dockerCli command.Cli, opts *infoOptions) (retErr error) {
 	info := dockerInfo{
 		ClientInfo: &clientInfo{
 			// Don't pass a dockerCLI to newClientVersion(), because we currently
@@ -99,15 +98,28 @@ func runInfo(ctx context.Context, cmd *cobra.Command, dockerCli command.Cli, opt
 	}
 
 	if needsServerInfo(opts.format, info) {
-		dinfo, err := dockerCli.Client().Info(ctx)
-		if err != nil && client.IsErrConnectionFailed(err) {
-			return cli.StatusError{StatusCode: 125, Cause: err}
-		} else if err != nil {
-			// if a format is provided, print the error, as it may be hidden
-			// otherwise if the template doesn't include the ServerErrors field.
+		if dinfo, err := dockerCli.Client().Info(ctx); err == nil {
+			info.Info = &dinfo
+		} else {
 			info.ServerErrors = append(info.ServerErrors, err.Error())
+			if opts.format == "" {
+				// reset the server info to prevent printing "empty" Server info
+				// and warnings, but don't reset it if a custom format was specified
+				// to prevent errors from Go's template parsing during format.
+				info.Info = nil
+			}
+			defer func() {
+				// formatInfo and prettyPrintInfo return an error when either
+				// failing to handle the template, or after printing client
+				// or server errors.
+				//
+				// if a format is provided, return the error, as it may be hidden
+				// otherwise if the template doesn't include the ServerErrors field.
+				if retErr == nil {
+					retErr = err
+				}
+			}()
 		}
-		info.Info = &dinfo
 	}
 
 	if opts.format == "" {
