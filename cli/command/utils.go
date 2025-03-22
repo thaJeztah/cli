@@ -32,12 +32,15 @@ func CopyToFile(outfile string, r io.Reader) error {
 	return err
 }
 
+// Deprecated: this error was only used internally and will be removed in the next release.
 const ErrPromptTerminated = prompt.ErrTerminated
 
 // DisableInputEcho disables input echo on the provided streams.In.
 // This is useful when the user provides sensitive information like passwords.
 // The function returns a restore function that should be called to restore the
 // terminal state.
+//
+// Deprecated: this utility was only used internally and will be removed in the next release.
 func DisableInputEcho(ins *streams.In) (restore func() error, err error) {
 	return prompt.DisableInputEcho(ins)
 }
@@ -49,6 +52,8 @@ func DisableInputEcho(ins *streams.In) (restore func() error, err error) {
 // When the prompt returns an error, the caller should propagate the error up
 // the stack and close the io.Reader used for the prompt which will prevent the
 // background goroutine from blocking indefinitely.
+//
+// Deprecated: this utility was only used internally and will be removed in the next release.
 func PromptForInput(ctx context.Context, in io.Reader, out io.Writer, message string) (string, error) {
 	return prompt.ReadInput(ctx, in, out, message)
 }
@@ -63,6 +68,8 @@ func PromptForInput(ctx context.Context, in io.Reader, out io.Writer, message st
 // When the prompt returns an error, the caller should propagate the error up
 // the stack and close the io.Reader used for the prompt which will prevent the
 // background goroutine from blocking indefinitely.
+//
+// Deprecated: this utility was only used internally and will be removed in the next release.
 func PromptForConfirmation(ctx context.Context, ins io.Reader, outs io.Writer, message string) (bool, error) {
 	return prompt.Confirm(ctx, ins, outs, message)
 }
