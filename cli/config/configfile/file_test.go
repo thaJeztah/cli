@@ -495,7 +495,10 @@ const envTestAuthConfig = `{
 	"auths": {
 		"env.example.test": {
 			"auth": "ZW52X3VzZXI6ZW52X3Bhc3M="
-		}
+		},
+		"https://index.docker.io/v1/": {},
+		"https://index.docker.io/v1/access-token": {},
+		"https://index.docker.io/v1/refresh-token": {}
 	}
 }`
 
