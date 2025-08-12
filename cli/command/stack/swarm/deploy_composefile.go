@@ -95,7 +95,7 @@ func validateExternalNetworks(ctx context.Context, apiClient client.NetworkAPICl
 			// local-scoped networks, so there's no need to inspect them.
 			continue
 		}
-		nw, err := apiClient.NetworkInspect(ctx, networkName, network.InspectOptions{})
+		nw, err := apiClient.NetworkInspect(ctx, networkName, client.NetworkInspectOptions{})
 		switch {
 		case errdefs.IsNotFound(err):
 			return fmt.Errorf("network %q is declared as external, but could not be found. You need to create a swarm-scoped network before the stack is deployed", networkName)

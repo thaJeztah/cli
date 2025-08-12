@@ -100,7 +100,7 @@ func TestContainerPsContext(t *testing.T) {
 			call:      ctx.CreatedAt,
 		},
 		{
-			container: container.Summary{Ports: []container.Port{{PrivatePort: 8080, PublicPort: 8080, Type: "tcp"}}},
+			container: container.Summary{Ports: []container.PortSummary{{PrivatePort: 8080, PublicPort: 8080, Type: "tcp"}}},
 			trunc:     true,
 			expValue:  "8080/tcp",
 			call:      ctx.Ports,
@@ -549,7 +549,7 @@ func TestContainerBackCompat(t *testing.T) {
 		ImageManifestDescriptor: nil,
 		Command:                 "/bin/sh",
 		Created:                 createdAtTime.UTC().Unix(),
-		Ports:                   []container.Port{{PrivatePort: 8080, PublicPort: 8080, Type: "tcp"}},
+		Ports:                   []container.PortSummary{{PrivatePort: 8080, PublicPort: 8080, Type: "tcp"}},
 		SizeRw:                  123,
 		SizeRootFs:              12345,
 		Labels:                  map[string]string{"label1": "value1", "label2": "value2"},
@@ -596,14 +596,14 @@ func TestContainerBackCompat(t *testing.T) {
 }
 
 type ports struct {
-	ports    []container.Port
+	ports    []container.PortSummary
 	expected string
 }
 
 func TestDisplayablePorts(t *testing.T) {
 	cases := []ports{
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 9988,
 					Type:        "tcp",
@@ -612,7 +612,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 9988,
 					Type:        "udp",
@@ -621,7 +621,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9988/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "0.0.0.0",
 					PrivatePort: 9988,
@@ -631,7 +631,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "0.0.0.0:0->9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "::",
 					PrivatePort: 9988,
@@ -641,7 +641,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "[::]:0->9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 9988,
 					PublicPort:  8899,
@@ -651,7 +651,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "4.3.2.1",
 					PrivatePort: 9988,
@@ -662,7 +662,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "4.3.2.1:8899->9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "::1",
 					PrivatePort: 9988,
@@ -673,7 +673,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "[::1]:8899->9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "4.3.2.1",
 					PrivatePort: 9988,
@@ -684,7 +684,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "4.3.2.1:9988->9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "::1",
 					PrivatePort: 9988,
@@ -695,7 +695,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "[::1]:9988->9988/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 9988,
 					Type:        "udp",
@@ -707,7 +707,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9988/udp, 9988/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "1.2.3.4",
 					PublicPort:  9998,
@@ -723,7 +723,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "1.2.3.4:9998-9999->9998-9999/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "::1",
 					PublicPort:  9998,
@@ -739,7 +739,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "[::1]:9998-9999->9998-9999/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "1.2.3.4",
 					PublicPort:  8887,
@@ -755,7 +755,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "1.2.3.4:8887->9998/udp, 1.2.3.4:8888->9999/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "::1",
 					PublicPort:  8887,
@@ -771,7 +771,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "[::1]:8887->9998/udp, [::1]:8888->9999/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 9998,
 					Type:        "udp",
@@ -783,7 +783,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9998-9999/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "1.2.3.4",
 					PrivatePort: 6677,
@@ -798,7 +798,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9988/udp, 1.2.3.4:7766->6677/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					IP:          "1.2.3.4",
 					PrivatePort: 9988,
@@ -824,7 +824,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "4.3.2.1:3322->2233/tcp, [::1]:3322->2233/tcp, 1.2.3.4:8899->9988/tcp, 1.2.3.4:8899->9988/udp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 9988,
 					PublicPort:  8899,
@@ -844,7 +844,7 @@ func TestDisplayablePorts(t *testing.T) {
 			expected: "9988/udp, 4.3.2.1:3322->2233/tcp, 1.2.3.4:7766->6677/tcp",
 		},
 		{
-			ports: []container.Port{
+			ports: []container.PortSummary{
 				{
 					PrivatePort: 80,
 					Type:        "tcp",

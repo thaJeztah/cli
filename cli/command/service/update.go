@@ -14,7 +14,6 @@ import (
 	"github.com/docker/cli/opts/swarmopts"
 	"github.com/moby/moby/api/types/container"
 	"github.com/moby/moby/api/types/mount"
-	"github.com/moby/moby/api/types/network"
 	"github.com/moby/moby/api/types/swarm"
 	"github.com/moby/moby/api/types/versions"
 	"github.com/moby/moby/client"
@@ -1328,7 +1327,7 @@ func updateNetworks(ctx context.Context, apiClient client.NetworkAPIClient, flag
 	toRemove := buildToRemoveSet(flags, flagNetworkRemove)
 	idsToRemove := make(map[string]struct{})
 	for networkIDOrName := range toRemove {
-		nw, err := apiClient.NetworkInspect(ctx, networkIDOrName, network.InspectOptions{Scope: "swarm"})
+		nw, err := apiClient.NetworkInspect(ctx, networkIDOrName, client.NetworkInspectOptions{Scope: "swarm"})
 		if err != nil {
 			return err
 		}

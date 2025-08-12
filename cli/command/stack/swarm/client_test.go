@@ -28,7 +28,7 @@ type fakeClient struct {
 	removedConfigs  []string
 
 	serviceListFunc    func(options swarm.ServiceListOptions) ([]swarm.Service, error)
-	networkListFunc    func(options network.ListOptions) ([]network.Summary, error)
+	networkListFunc    func(options client.NetworkListOptions) ([]network.Summary, error)
 	secretListFunc     func(options swarm.SecretListOptions) ([]swarm.Secret, error)
 	configListFunc     func(options swarm.ConfigListOptions) ([]swarm.Config, error)
 	nodeListFunc       func(options swarm.NodeListOptions) ([]swarm.Node, error)
@@ -69,7 +69,7 @@ func (cli *fakeClient) ServiceList(_ context.Context, options swarm.ServiceListO
 	return servicesList, nil
 }
 
-func (cli *fakeClient) NetworkList(_ context.Context, options network.ListOptions) ([]network.Summary, error) {
+func (cli *fakeClient) NetworkList(_ context.Context, options client.NetworkListOptions) ([]network.Summary, error) {
 	if cli.networkListFunc != nil {
 		return cli.networkListFunc(options)
 	}

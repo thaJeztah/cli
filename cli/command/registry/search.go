@@ -11,6 +11,7 @@ import (
 	"github.com/docker/cli/internal/commands"
 	"github.com/docker/cli/opts"
 	registrytypes "github.com/moby/moby/api/types/registry"
+	"github.com/moby/moby/client"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +63,7 @@ func runSearch(ctx context.Context, dockerCli command.Cli, options searchOptions
 		return err
 	}
 
-	results, err := dockerCli.Client().ImageSearch(ctx, options.term, registrytypes.SearchOptions{
+	results, err := dockerCli.Client().ImageSearch(ctx, options.term, client.ImageSearchOptions{
 		RegistryAuth:  encodedAuth,
 		PrivilegeFunc: nil,
 		Filters:       options.filter.Value(),
