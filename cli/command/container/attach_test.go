@@ -31,13 +31,9 @@ func TestNewAttachCommandErrors(t *testing.T) {
 			args:          []string{"5cb5bb5e4a3b"},
 			expectedError: "cannot attach to a stopped container",
 			containerInspectFunc: func(containerID string) (container.InspectResponse, error) {
-				return container.InspectResponse{
-					ContainerJSONBase: &container.ContainerJSONBase{
-						State: &container.State{
-							Running: false,
-						},
-					},
-				}, nil
+				var resp container.InspectResponse
+				resp.State = &container.State{Running: false}
+				return resp, nil
 			},
 		},
 		{
@@ -45,14 +41,12 @@ func TestNewAttachCommandErrors(t *testing.T) {
 			args:          []string{"5cb5bb5e4a3b"},
 			expectedError: "cannot attach to a paused container",
 			containerInspectFunc: func(containerID string) (container.InspectResponse, error) {
-				return container.InspectResponse{
-					ContainerJSONBase: &container.ContainerJSONBase{
-						State: &container.State{
-							Running: true,
-							Paused:  true,
-						},
-					},
-				}, nil
+				var resp container.InspectResponse
+				resp.State = &container.State{
+					Running: true,
+					Paused:  true,
+				}
+				return resp, nil
 			},
 		},
 		{
@@ -60,15 +54,13 @@ func TestNewAttachCommandErrors(t *testing.T) {
 			args:          []string{"5cb5bb5e4a3b"},
 			expectedError: "cannot attach to a restarting container",
 			containerInspectFunc: func(containerID string) (container.InspectResponse, error) {
-				return container.InspectResponse{
-					ContainerJSONBase: &container.ContainerJSONBase{
-						State: &container.State{
-							Running:    true,
-							Paused:     false,
-							Restarting: true,
-						},
-					},
-				}, nil
+				var resp container.InspectResponse
+				resp.State = &container.State{
+					Running:    true,
+					Paused:     false,
+					Restarting: true,
+				}
+				return resp, nil
 			},
 		},
 	}

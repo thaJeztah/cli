@@ -20,10 +20,10 @@ var logFn = func(expectedOut string) func(string, container.LogsOptions) (io.Rea
 
 func TestRunLogs(t *testing.T) {
 	inspectFn := func(containerID string) (container.InspectResponse, error) {
-		return container.InspectResponse{
-			Config:            &container.Config{Tty: true},
-			ContainerJSONBase: &container.ContainerJSONBase{State: &container.State{Running: false}},
-		}, nil
+		var resp container.InspectResponse
+		resp.Config = &container.Config{Tty: true}
+		resp.State = &container.State{Running: false}
+		return resp, nil
 	}
 
 	testcases := []struct {
