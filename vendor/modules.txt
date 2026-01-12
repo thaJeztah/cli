@@ -189,7 +189,7 @@ github.com/moby/moby/api/types/storage
 github.com/moby/moby/api/types/swarm
 github.com/moby/moby/api/types/system
 github.com/moby/moby/api/types/volume
-# github.com/moby/moby/client v0.2.2-rc.1.0.20260112134000-28c9d26ba605
+# github.com/moby/moby/client v0.2.2-rc.1.0.20260112134000-28c9d26ba605 => github.com/thaJeztah/docker/client v0.0.0-20260112121906-a38bf456cd67
 ## explicit; go 1.24.0
 github.com/moby/moby/client
 github.com/moby/moby/client/internal
@@ -543,3 +543,4 @@ gotest.tools/v3/skip
 # tags.cncf.io/container-device-interface v1.1.0
 ## explicit; go 1.21
 tags.cncf.io/container-device-interface/pkg/parser
+# github.com/moby/moby/client => github.com/thaJeztah/docker/client v0.0.0-20260112121906-a38bf456cd67

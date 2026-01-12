@@ -115,8 +115,6 @@ github.com/moby/go-archive v0.2.0 h1:zg5QDUM2mi0JIM9fdQZWC7U8+2ZfixfTYoHL7rWUcP8
 github.com/moby/go-archive v0.2.0/go.mod h1:mNeivT14o8xU+5q1YnNrkQVpK+dnNe/K6fHqnTg4qPU=
 github.com/moby/moby/api v1.53.0-rc.1.0.20260112134000-28c9d26ba605 h1:g1w5NogyyZcrg51cvDcApZ9jaCwlTR08NtrXAYAwYTs=
 github.com/moby/moby/api v1.53.0-rc.1.0.20260112134000-28c9d26ba605/go.mod h1:8mb+ReTlisw4pS6BRzCMts5M49W5M7bKt1cJy/YbAqc=
-github.com/moby/moby/client v0.2.2-rc.1.0.20260112134000-28c9d26ba605 h1:DwTxxKeRaPUHwyR7qhQRfs3BP8/B6TnB+wWjX9dEwJM=
-github.com/moby/moby/client v0.2.2-rc.1.0.20260112134000-28c9d26ba605/go.mod h1:7/LxA6hSevmFTvA8atcSN/W9x8bBC6vKjEwY5AKUs00=
 github.com/moby/patternmatcher v0.6.0 h1:GmP9lR19aU5GqSSFko+5pRqHi+Ohk1O69aFiKkVGiPk=
 github.com/moby/patternmatcher v0.6.0/go.mod h1:hDPoyOpDY7OrrMDLaYoY3hf52gNCR/YOUYxkhApJIxc=
 github.com/moby/swarmkit/v2 v2.1.1 h1:yvTJ8MMCc3f0qTA44J6R59EZ5yZawdYopkpuLk4+ICU=
@@ -192,6 +190,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
+github.com/thaJeztah/docker/client v0.0.0-20260112121906-a38bf456cd67 h1:1k+1f3m7Vty26Fon9YSNRqNxtHYQheZGFSuDRSNr1PY=
+github.com/thaJeztah/docker/client v0.0.0-20260112121906-a38bf456cd67/go.mod h1:7/LxA6hSevmFTvA8atcSN/W9x8bBC6vKjEwY5AKUs00=
 github.com/tonistiigi/go-rosetta v0.0.0-20220804170347-3f4430f2d346 h1:TvtdmeYsYEij78hS4oxnwikoiLdIrgav3BA+CbhaDAI=
 github.com/tonistiigi/go-rosetta v0.0.0-20220804170347-3f4430f2d346/go.mod h1:xKQhd7snlzKFuUi1taTGWjpRE8iFTA06DeacYi3CVFQ=
 github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f/go.mod h1:N2zxlSyiKSe5eX1tZViRH5QA0qijqEDrYZiPEAiq3wU=

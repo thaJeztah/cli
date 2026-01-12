@@ -6,6 +6,9 @@ module github.com/docker/cli
 
 go 1.24.0
 
+// FIXME(thaJeztah): testing https://github.com/moby/moby/pull/51836
+replace github.com/moby/moby/client => github.com/thaJeztah/docker/client v0.0.0-20260112121906-a38bf456cd67
+
 require (
 	dario.cat/mergo v1.0.2
 	github.com/containerd/errdefs v1.0.0
