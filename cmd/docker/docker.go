@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/containerd/errdefs"
 	"github.com/docker/cli/cli"
+	"github.com/docker/cli/cli-plugins/hooks"
 	pluginmanager "github.com/docker/cli/cli-plugins/manager"
 	"github.com/docker/cli/cli-plugins/socket"
 	"github.com/docker/cli/cli/command"
@@ -24,6 +26,7 @@ import (
 	cliflags "github.com/docker/cli/cli/flags"
 	"github.com/docker/cli/cli/version"
 	platformsignals "github.com/docker/cli/cmd/docker/internal/signals"
+	"github.com/moby/moby/client"
 	"github.com/moby/moby/client/pkg/versions"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -79,11 +82,19 @@ func notifyContext(ctx context.Context, signals ...os.Signal) (context.Context, 
 	}
 }
 
+var reqHeaders http.Header
+
 func dockerMain(ctx context.Context) error {
 	ctx, cancelNotify := notifyContext(ctx, platformsignals.TerminationSignals...)
 	defer cancelNotify()
 
-	dockerCli, err := command.NewDockerCli(command.WithBaseContext(ctx))
+	dockerCli, err := command.NewDockerCli(
+		command.WithBaseContext(ctx),
+		command.WithAPIClientOptions(client.WithResponseHook(func(req *http.Response) error {
+			reqHeaders = req.Header.Clone()
+			return nil
+		})),
+	)
 	if err != nil {
 		return err
 	}
@@ -484,6 +495,9 @@ func runDocker(ctx context.Context, dockerCli *command.DockerCli) error {
 				if ccmd != nil && dockerCli.Out().IsTerminal() && dockerCli.HooksEnabled() {
 					pluginmanager.RunPluginHooks(ctx, dockerCli, cmd, ccmd, args)
 				}
+				if ccmd != nil && dockerCli.Out().IsTerminal() && dockerCli.HooksEnabled() {
+					hooks.PrintNextSteps(subCommand.ErrOrStderr(), []string{"hello world" + fmt.Sprint(reqHeaders)})
+				}
 				return nil
 			}
 			if !errdefs.IsNotFound(err) {
@@ -512,6 +526,7 @@ func runDocker(ctx context.Context, dockerCli *command.DockerCli) error {
 			errMessage = err.Error()
 		}
 		pluginmanager.RunCLICommandHooks(ctx, dockerCli, cmd, subCommand, errMessage)
+		hooks.PrintNextSteps(subCommand.ErrOrStderr(), []string{"hello world2" + fmt.Sprint(reqHeaders)})
 	}
 
 	return err
