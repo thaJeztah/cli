@@ -1,6 +1,7 @@
 package hooks_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/docker/cli/cli-plugins/hooks"
@@ -121,5 +122,29 @@ func TestParseTemplate(t *testing.T) {
 				assert.DeepEqual(t, out, tc.expectedOutput)
 			}
 		})
+	}
+}
+
+func TestHookMessages(t *testing.T) {
+	hints := []HookMessage{
+		{
+			Type:     NextSteps,
+			Template: "A new version of Docker Desktop is available",
+		},
+		{
+			Type:     NextSteps,
+			Template: "The selected port is already in use by container 'my-container'. Try using a different port, or remove 'my-container'",
+		},
+	}
+	headerVal, err := json.Marshal(&hints)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(string(headerVal))
+
+	var hookMessageData []HookMessage
+	err = json.Unmarshal(headerVal, &hookMessageData)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
