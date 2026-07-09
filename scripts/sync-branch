@@ -10,7 +10,7 @@ fi
 tags_to_sync=("$@")
 
 for tag_to_sync in "${tags_to_sync[@]}"; do
-	if git merge --no-ff "$tag_to_sync"; then
+	if git merge --no-edit --no-ff "$tag_to_sync"; then
 		continue
 	fi
 
@@ -20,7 +20,9 @@ for tag_to_sync in "${tags_to_sync[@]}"; do
 
 	git checkout "$tag_to_sync" -- '.'
 	git add --all
-	git merge --continue
+
+	# Can't use --no-edit with --continue
+	EDITOR=true git merge --continue
 done
 
 # Check that every tag is in the branch.
