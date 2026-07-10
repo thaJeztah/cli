@@ -29,7 +29,7 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: write
-      workflows: write
+      actions: write
     outputs:
       base_sha: ${{ steps.sync.outputs.base_sha }}
       has_changes: ${{ steps.sync.outputs.has_changes }}
@@ -120,7 +120,7 @@ jobs:
     environment: docker-releases
     permissions:
       contents: write
-      workflows: write
+      actions: write
     timeout-minutes: 10
     steps:
       - name: Checkout
