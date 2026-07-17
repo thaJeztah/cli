@@ -11,6 +11,9 @@ tool (
 	golang.org/x/mod/modfile // for module compatibility check
 )
 
+// FIXME(thaJeztah): testing https://github.com/moby/go-archive/pull/45
+replace github.com/moby/go-archive => github.com/ctalledo/go-archive v0.2.1-0.20260716171756-df2ce6219bdc
+
 require (
 	dario.cat/mergo v1.0.2
 	github.com/containerd/errdefs v1.0.0

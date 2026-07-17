@@ -162,7 +162,7 @@ github.com/mattn/go-runewidth
 # github.com/moby/docker-image-spec v1.3.1
 ## explicit; go 1.18
 github.com/moby/docker-image-spec/specs-go/v1
-# github.com/moby/go-archive v0.2.1-0.20260716170833-91b7e546daf2
+# github.com/moby/go-archive v0.2.1-0.20260716170833-91b7e546daf2 => github.com/ctalledo/go-archive v0.2.1-0.20260716171756-df2ce6219bdc
 ## explicit; go 1.25
 github.com/moby/go-archive
 github.com/moby/go-archive/compression
@@ -565,3 +565,4 @@ gotest.tools/v3/skip
 # tags.cncf.io/container-device-interface v1.1.0
 ## explicit; go 1.21
 tags.cncf.io/container-device-interface/pkg/parser
+# github.com/moby/go-archive => github.com/ctalledo/go-archive v0.2.1-0.20260716171756-df2ce6219bdc
