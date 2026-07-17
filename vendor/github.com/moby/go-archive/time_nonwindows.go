@@ -54,9 +54,11 @@ func lchtimes(root *os.Root, name string, atime, mtime time.Time) error {
 		timeToTimespec(atime),
 		timeToTimespec(mtime),
 	}
-	err = unix.UtimesNanoAt(int(parent.Fd()), base, utimes[:], unix.AT_SYMLINK_NOFOLLOW)
-	if err != nil && !errors.Is(err, unix.ENOSYS) {
+	if err := unix.UtimesNanoAt(int(parent.Fd()), base, utimes[:], unix.AT_SYMLINK_NOFOLLOW); err != nil {
+		if errors.Is(err, unix.ENOSYS) {
+			return nil
+		}
 		return &os.PathError{Op: "lchtimes", Path: name, Err: err}
 	}
-	return err
+	return nil
 }

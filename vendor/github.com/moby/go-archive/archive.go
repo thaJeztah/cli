@@ -499,10 +499,11 @@ func createTarFile(root *os.Root, dstPath string, hdr *tar.Header, reader io.Rea
 	case tar.TypeLink:
 		// Defence in depth: root.Link's containment is limited when
 		// dest is a volume root.
-		if !filepath.IsLocal(hdr.Linkname) {
+		linkname := path.Clean(hdr.Linkname)
+		if linkname == "." || !filepath.IsLocal(linkname) {
 			return breakoutError(fmt.Errorf("invalid hardlink target %q", hdr.Linkname))
 		}
-		if err := root.Link(filepath.FromSlash(hdr.Linkname), dstPath); err != nil {
+		if err := root.Link(filepath.FromSlash(linkname), dstPath); err != nil {
 			return err
 		}
 
@@ -875,14 +876,23 @@ loop:
 			continue
 		}
 
-		// Strip a leading "/" so absolute entries stay root-relative, then
-		// Clean while keeping any ".." so the IsLocal check below rejects
-		// escapes instead of silently rewriting them.
-		hdr.Name = path.Clean(strings.TrimLeft(hdr.Name, "/"))
-		// Reject names that escape the extraction root (absolute or "..").
-		if !filepath.IsLocal(hdr.Name) {
+		// Strip a leading "/" so absolute entries stay root-relative.
+		name := strings.TrimLeft(hdr.Name, "/")
+		if name == "" || name == "." {
+			continue
+		}
+
+		// Normalize the path. Skip current-directory entries and reject
+		// entries that escape the extraction root.
+		name = path.Clean(name)
+		if name == "." {
+			continue
+		}
+		if !filepath.IsLocal(name) {
 			return breakoutError(fmt.Errorf("invalid entry name %q", hdr.Name))
 		}
+		hdr.Name = name
+
 		// Skip entries whose name (or hardlink target) Windows cannot represent.
 		if err := unrepresentableOnWindows(hdr); err != nil {
 			log.G(context.TODO()).Warnf("Windows: ignoring entry: %v", err)

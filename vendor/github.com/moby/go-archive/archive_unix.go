@@ -87,16 +87,17 @@ func handleTarTypeBlockCharFifo(hdr *tar.Header, dstPath string) error {
 // symlinks (there is no lchmod). For hardlinks, the mode is applied only when
 // the link target is itself not a symlink.
 func handleLChmod(root *os.Root, dstPath string, hdr *tar.Header, hdrInfo os.FileInfo) error {
-	if hdr.Typeflag == tar.TypeLink {
-		if fi, err := root.Lstat(hdr.Linkname); err == nil && (fi.Mode()&os.ModeSymlink == 0) {
-			if err := root.Chmod(dstPath, hdrInfo.Mode()); err != nil {
-				return err
-			}
+	switch hdr.Typeflag {
+	case tar.TypeSymlink:
+		return nil
+
+	case tar.TypeLink:
+		if fi, err := root.Lstat(filepath.FromSlash(hdr.Linkname)); err == nil && fi.Mode()&os.ModeSymlink == 0 {
+			return root.Chmod(dstPath, hdrInfo.Mode())
 		}
-	} else if hdr.Typeflag != tar.TypeSymlink {
-		if err := root.Chmod(dstPath, hdrInfo.Mode()); err != nil {
-			return err
-		}
+		return nil
+
+	default:
+		return root.Chmod(dstPath, hdrInfo.Mode())
 	}
-	return nil
 }

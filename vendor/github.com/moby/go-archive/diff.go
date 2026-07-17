@@ -56,14 +56,22 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 
 		size += hdr.Size
 
-		// Strip a leading "/" so absolute entries stay root-relative, then
-		// Clean while keeping any ".." so the IsLocal check below rejects
-		// escapes instead of silently rewriting them.
-		hdr.Name = path.Clean(strings.TrimLeft(hdr.Name, "/"))
-		// Reject names that escape the extraction root (absolute or "..").
-		if !filepath.IsLocal(hdr.Name) {
+		// Strip a leading "/" so absolute entries stay root-relative.
+		name := strings.TrimLeft(hdr.Name, "/")
+		if name == "" || name == "." {
+			continue
+		}
+
+		// Normalize the path. Skip current-directory entries and reject
+		// entries that escape the extraction root.
+		name = path.Clean(name)
+		if name == "." {
+			continue
+		}
+		if !filepath.IsLocal(name) {
 			return 0, breakoutError(fmt.Errorf("invalid entry name %q", hdr.Name))
 		}
+		hdr.Name = name
 
 		// Skip entries whose name (or hardlink target) Windows cannot represent.
 		if err := unrepresentableOnWindows(hdr); err != nil {
@@ -132,23 +140,22 @@ func UnpackLayer(dest string, layer io.Reader, options *TarOptions) (size int64,
 				err = filepath.WalkDir(absDir, func(p string, info os.DirEntry, err error) error {
 					if err != nil {
 						if os.IsNotExist(err) {
-							err = nil // parent was deleted
+							return nil // parent was deleted
 						}
 						return err
 					}
 					if p == absDir {
 						return nil
 					}
-					// unpackedPaths is keyed by the root-relative, forward-slash
-					// form of hdr.Name (the result of path.Join("/", ...) in
-					// the normalisation step above). filepath.WalkDir yields
-					// OS-native separators, so convert to slash form before
-					// looking up so the comparison works on Windows too.
-					rel := filepath.ToSlash(strings.TrimPrefix(
-						p, root.Name()+string(os.PathSeparator),
-					))
-					if _, exists := unpackedPaths[rel]; !exists {
-						return os.RemoveAll(p)
+					rel, err := filepath.Rel(root.Name(), p)
+					if err != nil {
+						return err
+					}
+
+					// unpackedPaths is keyed by root-relative slash paths; convert
+					// filepath.WalkDir's native path before looking it up.
+					if _, exists := unpackedPaths[filepath.ToSlash(rel)]; !exists {
+						return root.RemoveAll(rel)
 					}
 					return nil
 				})
