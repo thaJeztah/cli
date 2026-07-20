@@ -438,6 +438,8 @@ func createTarFile(root *os.Root, dstPath string, hdr *tar.Header, reader io.Rea
 		return fsRootPath(root.Name(), dstPath)
 	})
 
+	// created tracks whether creation already applied the 0o777 permission bits.
+	created := false
 	switch hdr.Typeflag {
 	case tar.TypeDir:
 		// Create directory unless it already exists as one; merge in that case.
@@ -448,6 +450,7 @@ func createTarFile(root *os.Root, dstPath string, hdr *tar.Header, reader io.Rea
 			if err := root.Mkdir(dstPath, hdrInfo.Mode()&0o777); err != nil {
 				return err
 			}
+			created = true
 		}
 
 	case tar.TypeReg:
@@ -457,10 +460,14 @@ func createTarFile(root *os.Root, dstPath string, hdr *tar.Header, reader io.Rea
 		// bits; special bits are applied afterward by handleLChmod.
 		// We use sequential file access to avoid depleting the standby list
 		// on Windows (go1.26). On Linux, this equates to a regular os.OpenFile.
+		_, statErr := root.Lstat(dstPath)
+
 		file, err := root.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC|windows_O_FILE_FLAG_SEQUENTIAL_SCAN, hdrInfo.Mode()&0o777)
 		if err != nil {
 			return err
 		}
+		created = errors.Is(statErr, os.ErrNotExist)
+
 		if err := copyWithBuffer(file, reader); err != nil {
 			_ = file.Close()
 			return err
@@ -570,10 +577,12 @@ func createTarFile(root *os.Root, dstPath string, hdr *tar.Header, reader io.Rea
 		}).Warn("ignored xattrs in archive: underlying filesystem doesn't support them")
 	}
 
-	// There is no LChmod, so ignore mode for symlink. Also, this
-	// must happen after chown, as that can modify the file mode
-	if err := handleLChmod(root, dstPath, hdr, hdrInfo); err != nil {
-		return err
+	if chmodNeeded(hdr, hdrInfo, created) {
+		// There is no LChmod, so ignore mode for symlink. Also, this
+		// must happen after chown, as that can modify the file mode
+		if err := handleLChmod(root, dstPath, hdr, hdrInfo); err != nil {
+			return err
+		}
 	}
 
 	aTime := boundTime(latestTime(hdr.AccessTime, hdr.ModTime))

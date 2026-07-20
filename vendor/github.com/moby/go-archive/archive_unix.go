@@ -83,6 +83,22 @@ func handleTarTypeBlockCharFifo(hdr *tar.Header, dstPath string) error {
 	return mknod(dstPath, mode, unix.Mkdev(uint32(hdr.Devmajor), uint32(hdr.Devminor)))
 }
 
+// chmodNeeded reports whether handleLChmod should call chmod.
+//
+// Symlinks are never chmod'd. Newly created files and directories already
+// have their regular permission bits (0o777) applied by os.Root.OpenFile
+// and os.Root.Mkdir; this helper identifies the remaining cases that
+// require a follow-up chmod.
+func chmodNeeded(hdr *tar.Header, hdrInfo os.FileInfo, created bool) bool {
+	if hdr.Typeflag == tar.TypeSymlink {
+		return false
+	}
+	if hdrInfo.Mode()&(os.ModeSetuid|os.ModeSetgid|os.ModeSticky) != 0 {
+		return true
+	}
+	return !created
+}
+
 // handleLChmod applies the mode from hdrInfo to dstPath within root, skipping
 // symlinks (there is no lchmod). For hardlinks, the mode is applied only when
 // the link target is itself not a symlink.
@@ -92,12 +108,59 @@ func handleLChmod(root *os.Root, dstPath string, hdr *tar.Header, hdrInfo os.Fil
 		return nil
 
 	case tar.TypeLink:
-		if fi, err := root.Lstat(filepath.FromSlash(hdr.Linkname)); err == nil && fi.Mode()&os.ModeSymlink == 0 {
-			return root.Chmod(dstPath, hdrInfo.Mode())
+		// If the target is a symlink, there is no way to chmod the hardlink
+		// without following it.
+		fi, err := root.Lstat(filepath.FromSlash(hdr.Linkname))
+		if err != nil || fi.Mode()&os.ModeSymlink != 0 {
+			return nil
 		}
-		return nil
+		return chmodNoSymlink(root, dstPath, hdrInfo.Mode())
 
 	default:
-		return root.Chmod(dstPath, hdrInfo.Mode())
+		return chmodNoSymlink(root, dstPath, hdrInfo.Mode())
 	}
+}
+
+// chmodNoSymlink applies mode to a non-symlink entry.
+//
+// Callers must have already excluded symlink entries.
+func chmodNoSymlink(root *os.Root, name string, mode os.FileMode) error {
+	parent, err := root.OpenFile(filepath.Dir(name), os.O_RDONLY, 0)
+	if err != nil {
+		return err
+	}
+	defer parent.Close()
+
+	base := filepath.Base(name)
+	perm := fileModeToPerm(mode)
+	if err := unix.Fchmodat(int(parent.Fd()), base, perm, unix.AT_SYMLINK_NOFOLLOW); err == nil {
+		return nil
+	} else if !errors.Is(err, syscall.EOPNOTSUPP) {
+		return &os.PathError{Op: "fchmodat2", Path: name, Err: err}
+	}
+
+	// Fallback for systems that cannot perform fchmodat with AT_SYMLINK_NOFOLLOW.
+	// Plain fchmodat follows the final path component and therefore introduces a
+	// TOCTOU race if an attacker can replace it with a symlink.
+	if err := unix.Fchmodat(int(parent.Fd()), base, perm, 0); err != nil {
+		return &os.PathError{Op: "fchmodat", Path: name, Err: err}
+	}
+	return nil
+}
+
+// fileModeToPerm returns the subset of an os.FileMode that can be applied
+// by chmod.
+func fileModeToPerm(mode os.FileMode) uint32 {
+	perm := uint32(mode.Perm())
+
+	if mode&os.ModeSetuid != 0 {
+		perm |= unix.S_ISUID
+	}
+	if mode&os.ModeSetgid != 0 {
+		perm |= unix.S_ISGID
+	}
+	if mode&os.ModeSticky != 0 {
+		perm |= unix.S_ISVTX
+	}
+	return perm
 }

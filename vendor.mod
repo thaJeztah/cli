@@ -12,7 +12,7 @@ tool (
 )
 
 // FIXME(thaJeztah): testing https://github.com/moby/go-archive/pull/45
-replace github.com/moby/go-archive => github.com/ctalledo/go-archive v0.2.1-0.20260717121834-2bc39549db4e
+replace github.com/moby/go-archive => github.com/ctalledo/go-archive v0.2.1-0.20260718101654-872dcb981b3f
 
 require (
 	dario.cat/mergo v1.0.2
